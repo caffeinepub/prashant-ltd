@@ -1,8 +1,11 @@
 import {
   Activity,
+  BookOpen,
   Bot,
   ChevronRight,
   Clock,
+  Crown,
+  FolderOpen,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -11,16 +14,28 @@ import {
   Settings,
   Shield,
   Sparkles,
+  Star,
   User,
   Users,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage, UserProfile, UserStats } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useSubscription } from "../hooks/useSubscription";
+import BlogManagerPanel from "./BlogManagerPanel";
+import ProjectsManager from "./ProjectsManager";
+import UsersListPanel from "./UsersListPanel";
 
-type DashboardTab = "overview" | "chat" | "settings";
+type DashboardTab =
+  | "overview"
+  | "chat"
+  | "settings"
+  | "projects"
+  | "users"
+  | "blog";
 
 interface Message {
   id: string;
@@ -516,9 +531,12 @@ function OverviewTab({
 interface SettingsTabProps {
   profile: UserProfile | null;
   principalId: string;
+  onUpgrade?: () => void;
 }
 
-function SettingsTab({ profile, principalId }: SettingsTabProps) {
+function SettingsTab({ profile, principalId, onUpgrade }: SettingsTabProps) {
+  const { isAdmin, isPaid } = useSubscription();
+
   return (
     <div
       className="px-6 py-6 space-y-4 overflow-y-auto"
@@ -586,6 +604,75 @@ function SettingsTab({ profile, principalId }: SettingsTabProps) {
             </div>
           ))}
 
+          {/* Subscription */}
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{ background: "oklch(0.13 0.02 270)" }}
+          >
+            {isAdmin ? (
+              <Crown className="w-4 h-4 text-primary flex-shrink-0" />
+            ) : isPaid ? (
+              <Star className="w-4 h-4 text-primary flex-shrink-0" />
+            ) : (
+              <Zap className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Subscription</p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                {isAdmin ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.45 0.22 278 / 0.25), oklch(0.45 0.18 220 / 0.25))",
+                      border: "1px solid oklch(0.55 0.22 278 / 0.4)",
+                      color: "oklch(0.75 0.18 278)",
+                    }}
+                  >
+                    <Crown className="w-3 h-3" />
+                    Admin (Free Unlimited)
+                  </span>
+                ) : isPaid ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold"
+                    style={{
+                      background: "oklch(0.65 0.18 160 / 0.15)",
+                      border: "1px solid oklch(0.65 0.18 160 / 0.35)",
+                      color: "oklch(0.72 0.18 160)",
+                    }}
+                  >
+                    <Star className="w-3 h-3" />
+                    Pro Plan Active
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{
+                        background: "oklch(0.55 0.02 270 / 0.2)",
+                        border: "1px solid oklch(0.35 0.03 270 / 0.4)",
+                        color: "oklch(0.65 0.02 270)",
+                      }}
+                    >
+                      Free Plan
+                    </span>
+                    {onUpgrade && (
+                      <button
+                        type="button"
+                        data-ocid="dashboard.settings.primary_button"
+                        onClick={onUpgrade}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold btn-gradient text-white"
+                      >
+                        <Zap className="w-3 h-3" />
+                        Upgrade
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Principal ID */}
           <div
             className="px-4 py-3 rounded-xl"
@@ -611,9 +698,13 @@ function SettingsTab({ profile, principalId }: SettingsTabProps) {
 // ─── Main Dashboard Page ──────────────────────────────────────────────────────
 interface DashboardPageProps {
   onNavigateHome: () => void;
+  onNavigateUpgrade?: () => void;
 }
 
-export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
+export default function DashboardPage({
+  onNavigateHome,
+  onNavigateUpgrade,
+}: DashboardPageProps) {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -623,6 +714,7 @@ export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
 
   const { identity, clear } = useInternetIdentity();
   const { actor, isFetching } = useActor();
+  const { isAdmin } = useSubscription();
   const principalId = identity?.getPrincipal().toString() ?? "";
 
   // Redirect if not logged in
@@ -652,7 +744,7 @@ export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
       .finally(() => setLoadingData(false));
   }, [actor, isFetching]);
 
-  const sidebarLinks: {
+  const baseSidebarLinks: {
     id: DashboardTab;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -671,12 +763,36 @@ export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
       ocid: "dashboard.nav.chat.link",
     },
     {
+      id: "projects",
+      label: "Projects",
+      icon: FolderOpen,
+      ocid: "dashboard.nav.projects.link",
+    },
+    {
       id: "settings",
       label: "Settings",
       icon: Settings,
       ocid: "dashboard.nav.settings.link",
     },
   ];
+
+  const sidebarLinks = isAdmin
+    ? [
+        ...baseSidebarLinks,
+        {
+          id: "blog" as DashboardTab,
+          label: "Blog",
+          icon: BookOpen,
+          ocid: "dashboard.nav.blog.link",
+        },
+        {
+          id: "users" as DashboardTab,
+          label: "Users",
+          icon: Users,
+          ocid: "dashboard.nav.users.link",
+        },
+      ]
+    : baseSidebarLinks;
 
   const handleLogout = () => {
     clear();
@@ -903,11 +1019,17 @@ export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
               {activeTab === "overview" && "Overview"}
               {activeTab === "chat" && "AI Chat"}
               {activeTab === "settings" && "Settings"}
+              {activeTab === "projects" && "Projects"}
+              {activeTab === "users" && "User Management"}
+              {activeTab === "blog" && "Blog Manager"}
             </h1>
             <p className="text-xs text-muted-foreground">
               {activeTab === "overview" && "Your account at a glance"}
               {activeTab === "chat" && "Chat with Prashant AI"}
               {activeTab === "settings" && "Your account information"}
+              {activeTab === "projects" && "Manage and track your projects"}
+              {activeTab === "users" && "Admin view of all registered users"}
+              {activeTab === "blog" && "Create, edit and publish blog posts"}
             </p>
           </div>
           <button
@@ -975,7 +1097,47 @@ export default function DashboardPage({ onNavigateHome }: DashboardPageProps) {
                   transition={{ duration: 0.2 }}
                   className="flex-1 overflow-y-auto"
                 >
-                  <SettingsTab profile={profile} principalId={principalId} />
+                  <SettingsTab
+                    profile={profile}
+                    principalId={principalId}
+                    onUpgrade={onNavigateUpgrade}
+                  />
+                </motion.div>
+              )}
+              {activeTab === "projects" && (
+                <motion.div
+                  key="projects"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 overflow-y-auto"
+                >
+                  <ProjectsManager />
+                </motion.div>
+              )}
+              {activeTab === "users" && isAdmin && (
+                <motion.div
+                  key="users"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 overflow-y-auto"
+                >
+                  <UsersListPanel />
+                </motion.div>
+              )}
+              {activeTab === "blog" && isAdmin && (
+                <motion.div
+                  key="blog"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 overflow-y-auto"
+                >
+                  <BlogManagerPanel />
                 </motion.div>
               )}
             </AnimatePresence>

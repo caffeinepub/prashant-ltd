@@ -18,7 +18,9 @@ import {
   ArrowRight,
   Award,
   BarChart3,
+  BookOpen,
   Brain,
+  Calendar,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -47,8 +49,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import ChatWidget from "./components/ChatWidget";
 import DashboardPage from "./components/DashboardPage";
+import LoginPage from "./components/LoginPage";
+import UpgradePage from "./components/UpgradePage";
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { useSubscription } from "./hooks/useSubscription";
 
 // ─── Smooth scroll helper ───────────────────────────────────────────────────
 function useSmoothScroll() {
@@ -62,13 +67,14 @@ function useSmoothScroll() {
 // ─── Navbar ──────────────────────────────────────────────────────────────────
 interface NavbarProps {
   onNavigateDashboard: () => void;
+  onNavigateLogin: () => void;
 }
 
-function Navbar({ onNavigateDashboard }: NavbarProps) {
+function Navbar({ onNavigateDashboard, onNavigateLogin }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const scrollTo = useSmoothScroll();
-  const { identity, login, clear, isLoggingIn } = useInternetIdentity();
+  const { identity, clear } = useInternetIdentity();
   const isLoggedIn = !!identity && !identity.getPrincipal().isAnonymous();
 
   // Track scroll for navbar appearance
@@ -82,6 +88,7 @@ function Navbar({ onNavigateDashboard }: NavbarProps) {
     { label: "Features", id: "features" },
     { label: "How It Works", id: "how-it-works" },
     { label: "Pricing", id: "pricing" },
+    { label: "Blog", id: "blog" },
     { label: "About", id: "about" },
     { label: "FAQ", id: "faq" },
     { label: "Contact", id: "contact" },
@@ -174,18 +181,10 @@ function Navbar({ onNavigateDashboard }: NavbarProps) {
               <button
                 type="button"
                 data-ocid="nav.login.button"
-                onClick={login}
-                disabled={isLoggingIn}
-                className="btn-gradient px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+                onClick={onNavigateLogin}
+                className="btn-gradient px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2"
               >
-                {isLoggingIn ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Logging in...
-                  </>
-                ) : (
-                  "Login"
-                )}
+                Login
               </button>
             )}
           </div>
@@ -287,20 +286,12 @@ function Navbar({ onNavigateDashboard }: NavbarProps) {
                     type="button"
                     data-ocid="nav.login.button"
                     onClick={() => {
-                      login();
+                      onNavigateLogin();
                       setMobileOpen(false);
                     }}
-                    disabled={isLoggingIn}
-                    className="btn-gradient w-full py-3 rounded-xl text-sm font-semibold text-white mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
+                    className="btn-gradient w-full py-3 rounded-xl text-sm font-semibold text-white mt-2 flex items-center justify-center gap-2"
                   >
-                    {isLoggingIn ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Logging in...
-                      </>
-                    ) : (
-                      "Login"
-                    )}
+                    Login
                   </button>
                 )}
               </div>
@@ -596,87 +587,116 @@ function HowItWorksSection() {
     <section
       id="how-it-works"
       className="section-padding"
-      style={{ background: "oklch(0.06 0.01 270)" }}
+      style={{ background: "oklch(0.05 0.008 270)" }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <span className="badge-gradient inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-5">
+          <span className="badge-gradient inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
             <ChevronRight className="w-3.5 h-3.5" />
             How It Works
           </span>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-5">
             From zero to AI in <span className="text-gradient">four steps</span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">
             Our streamlined onboarding gets your AI assistant live in minutes,
             not weeks.
           </p>
         </motion.div>
 
-        {/* Steps — horizontal on desktop */}
+        {/* Steps row */}
         <div className="relative">
-          {/* Connector line (desktop only) */}
+          {/* ── Horizontal connector line (desktop) ── */}
           <div
-            className="hidden lg:block absolute top-16 left-[calc(12.5%+2rem)] right-[calc(12.5%+2rem)] h-px"
+            aria-hidden="true"
+            className="hidden lg:block absolute"
             style={{
+              top: "2.5rem" /* vertically centered through icon circles (80px / 2 = 40px = 2.5rem) */,
+              left: "calc(12.5% + 1px)",
+              right: "calc(12.5% + 1px)",
+              height: "1px",
               background:
-                "linear-gradient(90deg, oklch(0.55 0.22 278 / 0.5), oklch(0.55 0.2 220 / 0.5))",
+                "linear-gradient(90deg, oklch(0.55 0.22 278 / 0.6) 0%, oklch(0.6 0.2 220 / 0.6) 100%)",
             }}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-6">
             {steps.map((step, i) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.12 }}
+                transition={{
+                  duration: 0.55,
+                  delay: i * 0.13,
+                  ease: "easeOut",
+                }}
                 className="flex flex-col items-center text-center"
+                data-ocid={`how_it_works.item.${i + 1}`}
               >
-                {/* Icon circle */}
-                <div className="relative mb-6">
+                {/* Icon circle with badge */}
+                <div className="relative mb-7 z-10">
+                  {/* Outer glow ring */}
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse-glow"
+                    className="absolute inset-0 rounded-full opacity-30 blur-md"
                     style={{
                       background:
-                        "linear-gradient(135deg, oklch(0.45 0.22 278), oklch(0.45 0.2 220))",
-                      zIndex: 1,
+                        "linear-gradient(135deg, oklch(0.55 0.24 278), oklch(0.58 0.2 220))",
+                    }}
+                  />
+                  {/* Main icon circle */}
+                  <div
+                    className="relative w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, oklch(0.42 0.22 278), oklch(0.46 0.2 220))",
+                      boxShadow:
+                        "0 0 0 1px oklch(0.55 0.22 278 / 0.35), 0 8px 32px oklch(0.45 0.22 278 / 0.35)",
                     }}
                   >
-                    <step.icon className="w-7 h-7 text-white" />
+                    <step.icon
+                      className="w-8 h-8 text-white"
+                      strokeWidth={1.8}
+                    />
                   </div>
+                  {/* Number badge */}
                   <div
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    className="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center font-bold text-white z-20"
                     style={{
-                      background: "oklch(0.45 0.22 278)",
+                      background:
+                        "linear-gradient(135deg, oklch(0.6 0.24 278), oklch(0.62 0.2 205))",
                       fontSize: "10px",
+                      letterSpacing: "0.02em",
+                      boxShadow: "0 2px 8px oklch(0.55 0.22 278 / 0.5)",
                     }}
                   >
                     {step.number}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-foreground mb-2">
+                <h3 className="text-xl font-bold text-foreground mb-2.5 tracking-tight">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+                <p className="text-muted-foreground text-sm leading-relaxed max-w-[220px]">
                   {step.description}
                 </p>
 
-                {/* Mobile connector */}
+                {/* Mobile vertical connector */}
                 {i < steps.length - 1 && (
                   <div
-                    className="sm:hidden mt-6 w-px h-8"
+                    aria-hidden="true"
+                    className="lg:hidden mt-7 w-px h-10"
                     style={{
                       background:
-                        "linear-gradient(to bottom, oklch(0.55 0.22 278 / 0.5), transparent)",
+                        "linear-gradient(to bottom, oklch(0.55 0.22 278 / 0.55), transparent)",
                     }}
                   />
                 )}
@@ -692,6 +712,13 @@ function HowItWorksSection() {
 // ─── Pricing Section ──────────────────────────────────────────────────────────
 function PricingSection() {
   const scrollTo = useSmoothScroll();
+
+  const handleProClick = () => {
+    toast.info(
+      "To subscribe to Pro, please contact hello@prashantltd.ai or click Subscribe Now in your dashboard.",
+      { duration: 6000 },
+    );
+  };
 
   const plans = [
     {
@@ -834,7 +861,9 @@ function PricingSection() {
                 <button
                   type="button"
                   data-ocid={plan.ocid}
-                  onClick={() => scrollTo("contact")}
+                  onClick={
+                    plan.popular ? handleProClick : () => scrollTo("contact")
+                  }
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
                     plan.popular
                       ? "btn-gradient text-white"
@@ -962,6 +991,290 @@ function TestimonialsSection() {
             </motion.div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Blog Section ─────────────────────────────────────────────────────────────
+
+interface BlogPostDisplay {
+  title: string;
+  excerpt: string;
+  author: string;
+  authorInitials: string;
+  authorColor: string;
+  date: string;
+  readTime: string;
+  tag: string;
+  tagColor: string;
+  tagBorder: string;
+  tagText: string;
+}
+
+function getTagStyles(tag: string) {
+  const lower = tag.toLowerCase();
+  if (lower === "engineering")
+    return {
+      tagColor: "oklch(0.55 0.22 278 / 0.15)",
+      tagBorder: "oklch(0.55 0.22 278 / 0.35)",
+      tagText: "oklch(0.78 0.16 278)",
+    };
+  if (lower === "security")
+    return {
+      tagColor: "oklch(0.65 0.18 160 / 0.15)",
+      tagBorder: "oklch(0.65 0.18 160 / 0.35)",
+      tagText: "oklch(0.72 0.18 160)",
+    };
+  if (lower === "company")
+    return {
+      tagColor: "oklch(0.7 0.16 55 / 0.15)",
+      tagBorder: "oklch(0.7 0.16 55 / 0.35)",
+      tagText: "oklch(0.75 0.16 55)",
+    };
+  return {
+    tagColor: "oklch(0.55 0.22 278 / 0.12)",
+    tagBorder: "oklch(0.55 0.22 278 / 0.3)",
+    tagText: "oklch(0.78 0.16 278)",
+  };
+}
+
+const BLOG_STORAGE_KEY = "prashantltd_blog_posts";
+
+interface StoredBlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  tag: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function BlogSection() {
+  const [dynamicPosts, setDynamicPosts] = useState<BlogPostDisplay[]>([]);
+  const [useStatic, setUseStatic] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(BLOG_STORAGE_KEY);
+      if (raw) {
+        const stored: StoredBlogPost[] = JSON.parse(raw);
+        const published = stored
+          .filter((p) => p.published)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+        if (published.length > 0) {
+          const authorColors = [
+            "oklch(0.55 0.22 278)",
+            "oklch(0.6 0.2 220)",
+            "oklch(0.65 0.2 40)",
+            "oklch(0.6 0.18 160)",
+          ];
+          const mapped: BlogPostDisplay[] = published.map((p, i) => {
+            const initials =
+              p.author
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2) || "AU";
+            const wordCount = (p.content || p.excerpt).split(/\s+/).length;
+            const readMins = Math.max(1, Math.ceil(wordCount / 200));
+            const { tagColor, tagBorder, tagText } = getTagStyles(p.tag);
+            return {
+              title: p.title,
+              excerpt: p.excerpt || p.content.slice(0, 200),
+              author: p.author || "Anonymous",
+              authorInitials: initials,
+              authorColor: authorColors[i % authorColors.length],
+              date: new Date(p.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              }),
+              readTime: `${readMins} min read`,
+              tag: p.tag || "General",
+              tagColor,
+              tagBorder,
+              tagText,
+            };
+          });
+          setDynamicPosts(mapped);
+          setUseStatic(false);
+          return;
+        }
+      }
+    } catch {
+      // fall through to static
+    }
+    setUseStatic(true);
+  }, []);
+
+  const staticPosts: BlogPostDisplay[] = [
+    {
+      title: "Building AI-Powered Apps in 2025",
+      excerpt:
+        "The landscape of AI development has shifted dramatically. Modern AI-powered apps are no longer just proof-of-concepts — they're production-grade platforms serving millions of users. Here's how we think about architecture, latency, and developer experience when shipping AI features.",
+      author: "Prashant Sharma",
+      authorInitials: "PS",
+      authorColor: "oklch(0.55 0.22 278)",
+      date: "Jan 15, 2025",
+      readTime: "6 min read",
+      tag: "Engineering",
+      tagColor: "oklch(0.55 0.22 278 / 0.15)",
+      tagBorder: "oklch(0.55 0.22 278 / 0.35)",
+      tagText: "oklch(0.78 0.16 278)",
+    },
+    {
+      title: "Why Internet Identity is the Future of Auth",
+      excerpt:
+        "Traditional username/password auth has failed us. Data breaches, phishing attacks, and forgotten passwords cost businesses billions. Internet Identity offers a radically different model: cryptographic identity tied to your device, with zero passwords and zero data leakage.",
+      author: "Ananya Kapoor",
+      authorInitials: "AK",
+      authorColor: "oklch(0.6 0.2 220)",
+      date: "Feb 3, 2025",
+      readTime: "8 min read",
+      tag: "Security",
+      tagColor: "oklch(0.65 0.18 160 / 0.15)",
+      tagBorder: "oklch(0.65 0.18 160 / 0.35)",
+      tagText: "oklch(0.72 0.18 160)",
+    },
+    {
+      title: "From Zero to Deployed: Our Journey",
+      excerpt:
+        "Eighteen months ago, we started Prashant Ltd with a simple question: why is deploying AI so hard? This is the story of how we went from a whiteboard sketch to a platform trusted by thousands of developers — the pivots, the lessons, and the unexpected wins.",
+      author: "Rahul Verma",
+      authorInitials: "RV",
+      authorColor: "oklch(0.65 0.2 40)",
+      date: "Mar 1, 2025",
+      readTime: "5 min read",
+      tag: "Company",
+      tagColor: "oklch(0.7 0.16 55 / 0.15)",
+      tagBorder: "oklch(0.7 0.16 55 / 0.35)",
+      tagText: "oklch(0.75 0.16 55)",
+    },
+  ];
+
+  const posts = useStatic ? staticPosts : dynamicPosts;
+
+  return (
+    <section id="blog" className="section-padding section-mesh-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <span className="badge-gradient inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-5">
+            <BookOpen className="w-3.5 h-3.5" />
+            From the Blog
+          </span>
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+            Insights from our{" "}
+            <span className="text-gradient">engineering team</span>
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Deep dives into AI development, security, and the future of building
+            on the Internet Computer.
+          </p>
+        </motion.div>
+
+        <div
+          data-ocid="blog.section"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {posts.map((post, i) => (
+            <motion.div
+              key={post.title}
+              data-ocid={`blog.item.${i + 1}`}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              <div className="glass-card glass-card-hover rounded-2xl p-6 h-full flex flex-col group cursor-pointer">
+                {/* Tag + Read time */}
+                <div className="flex items-center justify-between mb-4">
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+                    style={{
+                      background: post.tagColor,
+                      border: `1px solid ${post.tagBorder}`,
+                      color: post.tagText,
+                    }}
+                  >
+                    {post.tag}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {post.readTime}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-base font-bold text-foreground mb-3 leading-snug group-hover:text-gradient transition-all">
+                  {post.title}
+                </h3>
+
+                {/* Excerpt */}
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1 line-clamp-4">
+                  {post.excerpt}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0"
+                      style={{ background: post.authorColor }}
+                    >
+                      {post.authorInitials}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-foreground/90">
+                        {post.author}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Calendar className="w-2.5 h-2.5" />
+                        {post.date}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold flex items-center gap-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    Read More
+                    <ArrowRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* View all button */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="flex justify-center mt-10"
+        >
+          <button
+            type="button"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold border transition-all hover:bg-white/5 text-foreground"
+            style={{ borderColor: "oklch(0.3 0.05 270)" }}
+          >
+            <BookOpen className="w-4 h-4" />
+            View All Articles
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </motion.div>
       </div>
     </section>
   );
@@ -1614,9 +1927,12 @@ function Footer() {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState<"home" | "dashboard">("home");
+  const [page, setPage] = useState<"home" | "login" | "dashboard" | "upgrade">(
+    "home",
+  );
   const { identity, isInitializing } = useInternetIdentity();
   const { actor, isFetching } = useActor();
+  const { canAccess, isLoading: subscriptionLoading } = useSubscription();
   const isLoggedIn = !!identity && !identity.getPrincipal().isAnonymous();
 
   // On login, save profile if it doesn't exist yet
@@ -1641,14 +1957,75 @@ export default function App() {
   }, [isLoggedIn, actor, isFetching, isInitializing, identity]);
 
   const navigateToDashboard = () => {
-    if (isLoggedIn) setPage("dashboard");
+    if (!isLoggedIn) return;
+    // Wait for subscription status to be determined before navigating
+    if (subscriptionLoading) return;
+    if (canAccess) {
+      setPage("dashboard");
+    } else {
+      setPage("upgrade");
+    }
   };
 
-  if (page === "dashboard" && isLoggedIn) {
+  // After login completes, redirect away from login page
+  useEffect(() => {
+    if (isLoggedIn && page === "login" && !subscriptionLoading) {
+      if (canAccess) {
+        setPage("dashboard");
+      } else {
+        setPage("upgrade");
+      }
+    }
+  }, [isLoggedIn, page, canAccess, subscriptionLoading]);
+
+  if (page === "login" && !isLoggedIn) {
     return (
       <>
         <Toaster position="top-right" richColors />
-        <DashboardPage onNavigateHome={() => setPage("home")} />
+        <LoginPage onNavigateHome={() => setPage("home")} />
+      </>
+    );
+  }
+
+  if (page === "upgrade" && isLoggedIn) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <UpgradePage
+          onNavigateHome={() => setPage("home")}
+          onPaymentSuccess={() => setPage("dashboard")}
+        />
+      </>
+    );
+  }
+
+  if (page === "dashboard" && isLoggedIn && canAccess) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <DashboardPage
+          onNavigateHome={() => setPage("home")}
+          onNavigateUpgrade={() => setPage("upgrade")}
+        />
+      </>
+    );
+  }
+
+  // If somehow on dashboard without access (e.g. subscription revoked), go to upgrade
+  // But only redirect after subscription loading is complete to avoid flashing upgrade page
+  if (
+    page === "dashboard" &&
+    isLoggedIn &&
+    !canAccess &&
+    !subscriptionLoading
+  ) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <UpgradePage
+          onNavigateHome={() => setPage("home")}
+          onPaymentSuccess={() => setPage("dashboard")}
+        />
       </>
     );
   }
@@ -1656,13 +2033,17 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Toaster position="top-right" richColors />
-      <Navbar onNavigateDashboard={navigateToDashboard} />
+      <Navbar
+        onNavigateDashboard={navigateToDashboard}
+        onNavigateLogin={() => setPage("login")}
+      />
       <main>
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
         <PricingSection />
         <TestimonialsSection />
+        <BlogSection />
         <FAQSection />
         <AboutSection />
         <ContactSection />
