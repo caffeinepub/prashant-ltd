@@ -589,6 +589,44 @@ function PricingSection() {
       ],
       cta: "Start for Free",
     },
+    {
+      name: "Pro",
+      price: "$29",
+      period: "/month",
+      description: "For professionals who need more power and flexibility.",
+      ocid: "pricing.pro_button",
+      popular: true,
+      features: [
+        "Unlimited queries",
+        "10 active projects",
+        "Priority email support",
+        "Advanced analytics dashboard",
+        "Custom integrations (100+)",
+        "Faster response speed",
+        "Custom AI personas",
+        "Webhook support",
+      ],
+      cta: "Get Pro",
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      description: "For large teams needing security, scale, and compliance.",
+      ocid: "pricing.enterprise_button",
+      popular: false,
+      features: [
+        "Everything in Pro",
+        "Unlimited projects",
+        "Dedicated account manager",
+        "99.99% SLA guarantee",
+        "On-premise deployment",
+        "SSO & SAML support",
+        "Custom data retention",
+        "Compliance reporting",
+      ],
+      cta: "Contact Sales",
+    },
   ];
 
   return (
@@ -613,7 +651,7 @@ function PricingSection() {
           </p>
         </motion.div>
 
-        <div className="flex justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -621,7 +659,7 @@ function PricingSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="w-full max-w-md"
+              className="w-full"
             >
               <div
                 className={`relative rounded-2xl p-8 flex flex-col ${
