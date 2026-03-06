@@ -4,7 +4,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,24 +113,7 @@ function Navbar() {
             ))}
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Button
-              variant="ghost"
-              data-ocid="nav.login_button"
-              className="text-muted-foreground hover:text-foreground hover:bg-white/5"
-            >
-              Log In
-            </Button>
-            <button
-              type="button"
-              data-ocid="nav.signup_button"
-              onClick={() => scrollTo("pricing")}
-              className="btn-gradient px-5 py-2.5 rounded-lg text-sm font-semibold text-white"
-            >
-              Get Started
-            </button>
-          </div>
+          {/* Desktop CTA removed */}
 
           {/* Mobile hamburger */}
           <button
@@ -199,26 +181,7 @@ function Navbar() {
                   </button>
                 ))}
               </div>
-              <div className="p-4 border-t border-border flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  data-ocid="nav.login_button"
-                  className="w-full border-border/60"
-                >
-                  Log In
-                </Button>
-                <button
-                  type="button"
-                  data-ocid="nav.signup_button"
-                  onClick={() => {
-                    scrollTo("pricing");
-                    setMobileOpen(false);
-                  }}
-                  className="btn-gradient w-full py-2.5 rounded-lg text-sm font-semibold text-white"
-                >
-                  Get Started Free
-                </button>
-              </div>
+              {/* Mobile CTA removed */}
             </motion.div>
           </motion.div>
         )}
@@ -626,44 +589,6 @@ function PricingSection() {
       ],
       cta: "Start for Free",
     },
-    {
-      name: "Pro",
-      price: "$29",
-      period: "/month",
-      description: "For growing teams that need more power and flexibility.",
-      ocid: "pricing.pro_button",
-      popular: true,
-      features: [
-        "Unlimited queries",
-        "10 active projects",
-        "Priority email support",
-        "Advanced analytics dashboard",
-        "Custom integrations (100+)",
-        "Faster response speed",
-        "Custom AI personas",
-        "Webhook support",
-      ],
-      cta: "Start Pro Trial",
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "",
-      description: "For large organizations with advanced security needs.",
-      ocid: "pricing.enterprise_button",
-      popular: false,
-      features: [
-        "Everything in Pro",
-        "Unlimited projects",
-        "Dedicated account manager",
-        "99.99% SLA guarantee",
-        "On-premise deployment",
-        "SSO & SAML support",
-        "Custom data retention",
-        "Compliance reporting",
-      ],
-      cta: "Talk to Sales",
-    },
   ];
 
   return (
@@ -688,7 +613,7 @@ function PricingSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="flex justify-center">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -696,68 +621,74 @@ function PricingSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`relative rounded-2xl p-8 flex flex-col ${
-                plan.popular ? "gradient-border glow-violet" : "glass-card"
-              }`}
+              className="w-full max-w-md"
             >
-              {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap btn-gradient">
-                  Most Popular
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-foreground mb-1">
-                  {plan.name}
-                </h3>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  )}
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  {plan.description}
-                </p>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0"
-                      style={{
-                        background: "oklch(0.55 0.22 278 / 0.15)",
-                      }}
-                    >
-                      <Check className="w-3 h-3 text-primary" />
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                type="button"
-                data-ocid={plan.ocid}
-                onClick={() => scrollTo("contact")}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
-                  plan.popular
-                    ? "btn-gradient text-white"
-                    : "border hover:bg-white/5 text-foreground"
+              <div
+                className={`relative rounded-2xl p-8 flex flex-col ${
+                  plan.popular ? "gradient-border glow-violet" : "glass-card"
                 }`}
-                style={
-                  !plan.popular
-                    ? { borderColor: "oklch(0.3 0.05 270)" }
-                    : undefined
-                }
               >
-                {plan.cta}
-              </button>
+                {plan.popular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap btn-gradient">
+                    Most Popular
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-foreground mb-1">
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-4xl font-bold text-foreground">
+                      {plan.price}
+                    </span>
+                    {plan.period && (
+                      <span className="text-muted-foreground">
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    {plan.description}
+                  </p>
+                </div>
+
+                <ul className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0"
+                        style={{
+                          background: "oklch(0.55 0.22 278 / 0.15)",
+                        }}
+                      >
+                        <Check className="w-3 h-3 text-primary" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  data-ocid={plan.ocid}
+                  onClick={() => scrollTo("contact")}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
+                    plan.popular
+                      ? "btn-gradient text-white"
+                      : "border hover:bg-white/5 text-foreground"
+                  }`}
+                  style={
+                    !plan.popular
+                      ? { borderColor: "oklch(0.3 0.05 270)" }
+                      : undefined
+                  }
+                >
+                  {plan.cta}
+                </button>
+              </div>
             </motion.div>
           ))}
         </div>
