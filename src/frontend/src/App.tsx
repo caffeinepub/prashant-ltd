@@ -4,6 +4,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +24,10 @@ import {
   ChevronRight,
   Clock,
   Github,
+  LayoutDashboard,
   Linkedin,
   Loader2,
+  LogOut,
   Mail,
   Menu,
   MessageSquare,
@@ -37,7 +45,10 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import ChatWidget from "./components/ChatWidget";
+import DashboardPage from "./components/DashboardPage";
 import { useActor } from "./hooks/useActor";
+import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
 // ─── Smooth scroll helper ───────────────────────────────────────────────────
 function useSmoothScroll() {
@@ -49,10 +60,16 @@ function useSmoothScroll() {
 }
 
 // ─── Navbar ──────────────────────────────────────────────────────────────────
-function Navbar() {
+interface NavbarProps {
+  onNavigateDashboard: () => void;
+}
+
+function Navbar({ onNavigateDashboard }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const scrollTo = useSmoothScroll();
+  const { identity, login, clear, isLoggingIn } = useInternetIdentity();
+  const isLoggedIn = !!identity && !identity.getPrincipal().isAnonymous();
 
   // Track scroll for navbar appearance
   useEffect(() => {
@@ -113,7 +130,65 @@ function Navbar() {
             ))}
           </div>
 
-          {/* Desktop CTA removed */}
+          {/* Desktop auth area */}
+          <div className="hidden md:flex items-center gap-2">
+            {isLoggedIn ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    data-ocid="nav.user.toggle"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold btn-gradient focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="User menu"
+                  >
+                    P
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-44"
+                  style={{
+                    background: "oklch(0.12 0.02 270)",
+                    border: "1px solid oklch(0.25 0.04 270)",
+                  }}
+                >
+                  <DropdownMenuItem
+                    data-ocid="nav.user.dashboard.link"
+                    onClick={onNavigateDashboard}
+                    className="cursor-pointer flex items-center gap-2 text-sm"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    data-ocid="nav.user.logout.button"
+                    onClick={() => clear()}
+                    className="cursor-pointer flex items-center gap-2 text-sm text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <button
+                type="button"
+                data-ocid="nav.login.button"
+                onClick={login}
+                disabled={isLoggingIn}
+                className="btn-gradient px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
+              </button>
+            )}
+          </div>
 
           {/* Mobile hamburger */}
           <button
@@ -180,8 +255,55 @@ function Navbar() {
                     {link.label}
                   </button>
                 ))}
+                {isLoggedIn ? (
+                  <>
+                    <button
+                      type="button"
+                      data-ocid="nav.user.dashboard.link"
+                      onClick={() => {
+                        onNavigateDashboard();
+                        setMobileOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </button>
+                    <button
+                      type="button"
+                      data-ocid="nav.user.logout.button"
+                      onClick={() => {
+                        clear();
+                        setMobileOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    data-ocid="nav.login.button"
+                    onClick={() => {
+                      login();
+                      setMobileOpen(false);
+                    }}
+                    disabled={isLoggingIn}
+                    className="btn-gradient w-full py-3 rounded-xl text-sm font-semibold text-white mt-2 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {isLoggingIn ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      "Login"
+                    )}
+                  </button>
+                )}
               </div>
-              {/* Mobile CTA removed */}
             </motion.div>
           </motion.div>
         )}
@@ -1492,10 +1614,49 @@ function Footer() {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [page, setPage] = useState<"home" | "dashboard">("home");
+  const { identity, isInitializing } = useInternetIdentity();
+  const { actor, isFetching } = useActor();
+  const isLoggedIn = !!identity && !identity.getPrincipal().isAnonymous();
+
+  // On login, save profile if it doesn't exist yet
+  useEffect(() => {
+    if (!isLoggedIn || !actor || isFetching || isInitializing) return;
+    void (async () => {
+      try {
+        const hasProfile = await actor.hasUserProfile();
+        if (!hasProfile) {
+          const principal = identity!.getPrincipal().toString();
+          await actor.saveCallerUserProfile({
+            id: principal,
+            displayName: "User",
+            isActive: true,
+            joinedDate: BigInt(Date.now()) * BigInt(1_000_000),
+          });
+        }
+      } catch {
+        // silent — non-critical
+      }
+    })();
+  }, [isLoggedIn, actor, isFetching, isInitializing, identity]);
+
+  const navigateToDashboard = () => {
+    if (isLoggedIn) setPage("dashboard");
+  };
+
+  if (page === "dashboard" && isLoggedIn) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <DashboardPage onNavigateHome={() => setPage("home")} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <Toaster position="top-right" richColors />
-      <Navbar />
+      <Navbar onNavigateDashboard={navigateToDashboard} />
       <main>
         <HeroSection />
         <FeaturesSection />
@@ -1507,6 +1668,7 @@ export default function App() {
         <ContactSection />
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   );
 }

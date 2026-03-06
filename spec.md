@@ -1,34 +1,34 @@
 # Prashant Ltd
 
 ## Current State
-New project. No existing frontend or backend code.
+A full-featured AI platform landing page with: sticky navbar, hero section, features grid (6 cards), how it works (4 steps), pricing (Free/Pro/Enterprise), testimonials, FAQ (accordion), about section with stats, contact form wired to backend, and footer. No authentication or user-specific features exist. No chat interface exists.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Full landing page website for an AI assistant platform named "Prashant Ltd"
-- Sticky navigation bar with logo, nav links (Features, How It Works, Pricing, About, FAQ, Contact), and Login/Sign Up buttons
-- Hero section with tagline, subtitle, and CTA buttons (Get Started, Watch Demo)
-- Features section: grid of platform features with icons and descriptions (e.g., AI-powered, fast, secure, integrations, analytics, customizable)
-- How It Works section: numbered step-by-step guide (3-4 steps)
-- Pricing section: three tiers (Free, Pro, Enterprise) with feature lists and CTA buttons
-- Testimonials section: user review cards with avatar, name, role, and quote
-- FAQ section: accordion-style frequently asked questions
-- About section: company mission, values, and team description
-- Contact section: contact form (name, email, message) and support details
-- Footer: links, social media icons (Twitter, GitHub, LinkedIn), and copyright notice
-- Contact form submission stored in backend (name, email, message, timestamp)
+- **Login / Signup system**: Internet Identity based authentication. "Login" button in navbar. Users can register and log in.
+- **User Dashboard**: A protected route visible only when logged in. Shows:
+  - Welcome greeting with user's name/ID
+  - Stats cards (messages sent, account status, joined date)
+  - Recent chat history list
+  - Quick action buttons (New Chat, View Profile)
+- **Chat Box feature**: A floating chat widget visible on all pages (bottom-right corner), and a full-page chat view accessible from the dashboard. Users can type messages and receive echo/placeholder responses. Messages stored in backend per user.
+- **Navbar update**: Add "Login" button back (was removed earlier). When logged in, show user avatar/initials and a dropdown with "Dashboard" and "Logout".
 
 ### Modify
-- Nothing (new project)
+- Navbar: Add login button and user menu for authenticated state
+- App routing: Add `/dashboard` and `/chat` routes
 
 ### Remove
-- Nothing (new project)
+- Nothing removed
 
 ## Implementation Plan
-1. Select no special Caffeine components (standard build)
-2. Generate Motoko backend with a contact form submission endpoint (submitContact) and query to retrieve submissions
-3. Build full single-page React frontend with all 10 sections
-4. Wire contact form to backend actor
-5. Apply dark theme with purple/blue gradient accents, fully responsive layout
-6. Deploy
+1. Add `authorization` Caffeine component for Internet Identity login
+2. Backend: add user profile storage, chat message storage (per user), and CRUD endpoints for messages
+3. Frontend: 
+   - Add login/logout via authorization hooks
+   - Update navbar with login button and user dropdown
+   - Add `/dashboard` route with stats and recent chats
+   - Add `/chat` route with full chat interface
+   - Add floating chat widget (bottom-right) visible site-wide
+   - Wire all routes with auth guard (redirect to home if not logged in)

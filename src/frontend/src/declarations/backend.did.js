@@ -8,6 +8,11 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
+});
 export const Time = IDL.Int;
 export const ContactMessage = IDL.Record({
   'name' : IDL.Text,
@@ -15,17 +20,74 @@ export const ContactMessage = IDL.Record({
   'message' : IDL.Text,
   'timestamp' : Time,
 });
+export const UserProfile = IDL.Record({
+  'id' : IDL.Text,
+  'displayName' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'joinedDate' : Time,
+});
+export const ChatMessage = IDL.Record({
+  'content' : IDL.Text,
+  'role' : IDL.Text,
+  'timestamp' : Time,
+});
+export const UserStats = IDL.Record({
+  'accountStatus' : IDL.Bool,
+  'totalMessages' : IDL.Nat,
+  'joinedDate' : Time,
+});
 
 export const idlService = IDL.Service({
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addContactMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+  'addUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'getAllMessages' : IDL.Func([], [IDL.Vec(ContactMessage)], ['query']),
   'getAllMessagesByEmail' : IDL.Func([], [IDL.Vec(ContactMessage)], ['query']),
-  'getMessage' : IDL.Func([Time], [ContactMessage], ['query']),
+  'getAllUserProfile' : IDL.Func([], [IDL.Vec(UserProfile)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getChatHistory' : IDL.Func([], [IDL.Opt(IDL.Vec(ChatMessage))], ['query']),
+  'getCustomUserStats' : IDL.Func(
+      [IDL.Principal],
+      [
+        IDL.Record({
+          'accountStatus' : IDL.Bool,
+          'totalMessages' : IDL.Nat,
+          'joinedDate' : Time,
+        }),
+      ],
+      ['query'],
+    ),
+  'getDefaultUserStats' : IDL.Func([], [UserStats], ['query']),
+  'getUserChatHistory' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(IDL.Vec(ChatMessage))],
+      ['query'],
+    ),
+  'getUserProfile' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(UserProfile)],
+      ['query'],
+    ),
+  'getUserStats' : IDL.Func([], [IDL.Opt(UserStats)], ['query']),
+  'hasContactMessage' : IDL.Func([Time], [IDL.Bool], ['query']),
+  'hasUserProfile' : IDL.Func([], [IDL.Bool], ['query']),
+  'hideContactMessage' : IDL.Func([Time], [], []),
+  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'sendMessage' : IDL.Func([IDL.Text], [ChatMessage], []),
+  'updateAccountStatus' : IDL.Func([IDL.Bool], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
+  });
   const Time = IDL.Int;
   const ContactMessage = IDL.Record({
     'name' : IDL.Text,
@@ -33,16 +95,68 @@ export const idlFactory = ({ IDL }) => {
     'message' : IDL.Text,
     'timestamp' : Time,
   });
+  const UserProfile = IDL.Record({
+    'id' : IDL.Text,
+    'displayName' : IDL.Text,
+    'isActive' : IDL.Bool,
+    'joinedDate' : Time,
+  });
+  const ChatMessage = IDL.Record({
+    'content' : IDL.Text,
+    'role' : IDL.Text,
+    'timestamp' : Time,
+  });
+  const UserStats = IDL.Record({
+    'accountStatus' : IDL.Bool,
+    'totalMessages' : IDL.Nat,
+    'joinedDate' : Time,
+  });
   
   return IDL.Service({
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addContactMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+    'addUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'getAllMessages' : IDL.Func([], [IDL.Vec(ContactMessage)], ['query']),
     'getAllMessagesByEmail' : IDL.Func(
         [],
         [IDL.Vec(ContactMessage)],
         ['query'],
       ),
-    'getMessage' : IDL.Func([Time], [ContactMessage], ['query']),
+    'getAllUserProfile' : IDL.Func([], [IDL.Vec(UserProfile)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getChatHistory' : IDL.Func([], [IDL.Opt(IDL.Vec(ChatMessage))], ['query']),
+    'getCustomUserStats' : IDL.Func(
+        [IDL.Principal],
+        [
+          IDL.Record({
+            'accountStatus' : IDL.Bool,
+            'totalMessages' : IDL.Nat,
+            'joinedDate' : Time,
+          }),
+        ],
+        ['query'],
+      ),
+    'getDefaultUserStats' : IDL.Func([], [UserStats], ['query']),
+    'getUserChatHistory' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(IDL.Vec(ChatMessage))],
+        ['query'],
+      ),
+    'getUserProfile' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(UserProfile)],
+        ['query'],
+      ),
+    'getUserStats' : IDL.Func([], [IDL.Opt(UserStats)], ['query']),
+    'hasContactMessage' : IDL.Func([Time], [IDL.Bool], ['query']),
+    'hasUserProfile' : IDL.Func([], [IDL.Bool], ['query']),
+    'hideContactMessage' : IDL.Func([Time], [], []),
+    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'sendMessage' : IDL.Func([IDL.Text], [ChatMessage], []),
+    'updateAccountStatus' : IDL.Func([IDL.Bool], [], []),
   });
 };
 

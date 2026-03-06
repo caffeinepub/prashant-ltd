@@ -10,6 +10,11 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface ChatMessage {
+  'content' : string,
+  'role' : string,
+  'timestamp' : Time,
+}
 export interface ContactMessage {
   'name' : string,
   'email' : string,
@@ -17,11 +22,46 @@ export interface ContactMessage {
   'timestamp' : Time,
 }
 export type Time = bigint;
+export interface UserProfile {
+  'id' : string,
+  'displayName' : string,
+  'isActive' : boolean,
+  'joinedDate' : Time,
+}
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
+export interface UserStats {
+  'accountStatus' : boolean,
+  'totalMessages' : bigint,
+  'joinedDate' : Time,
+}
 export interface _SERVICE {
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addContactMessage' : ActorMethod<[string, string, string], undefined>,
+  'addUserProfile' : ActorMethod<[string, string], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'getAllMessages' : ActorMethod<[], Array<ContactMessage>>,
   'getAllMessagesByEmail' : ActorMethod<[], Array<ContactMessage>>,
-  'getMessage' : ActorMethod<[Time], ContactMessage>,
+  'getAllUserProfile' : ActorMethod<[], Array<UserProfile>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getChatHistory' : ActorMethod<[], [] | [Array<ChatMessage>]>,
+  'getCustomUserStats' : ActorMethod<
+    [Principal],
+    { 'accountStatus' : boolean, 'totalMessages' : bigint, 'joinedDate' : Time }
+  >,
+  'getDefaultUserStats' : ActorMethod<[], UserStats>,
+  'getUserChatHistory' : ActorMethod<[Principal], [] | [Array<ChatMessage>]>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUserStats' : ActorMethod<[], [] | [UserStats]>,
+  'hasContactMessage' : ActorMethod<[Time], boolean>,
+  'hasUserProfile' : ActorMethod<[], boolean>,
+  'hideContactMessage' : ActorMethod<[Time], undefined>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendMessage' : ActorMethod<[string], ChatMessage>,
+  'updateAccountStatus' : ActorMethod<[boolean], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
