@@ -4,6 +4,7 @@ import {
   Bot,
   ChevronRight,
   Clock,
+  Code2,
   Crown,
   FolderOpen,
   LayoutDashboard,
@@ -17,6 +18,7 @@ import {
   Star,
   User,
   Users,
+  Wand2,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -32,6 +34,7 @@ import UsersListPanel from "./UsersListPanel";
 type DashboardTab =
   | "overview"
   | "chat"
+  | "builder"
   | "settings"
   | "projects"
   | "users"
@@ -301,6 +304,401 @@ function ChatInterface() {
             type="button"
             data-ocid="dashboard.chat.submit_button"
             onClick={handleSend}
+            disabled={!input.trim() || sending}
+            className="w-9 h-9 rounded-lg btn-gradient flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Send message"
+          >
+            {sending ? (
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+            ) : (
+              <Send className="w-4 h-4 text-white" />
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Project Builder Chat ────────────────────────────────────────────────────
+interface BuilderMessage {
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: number;
+}
+
+const BUILDER_SUGGESTIONS = [
+  "Ek restaurant ki website banao with menu aur booking",
+  "Task manager app with login aur projects",
+  "Portfolio website with blog aur contact form",
+  "E-commerce store with product catalog aur cart",
+  "Student management system with attendance",
+  "Online quiz app with leaderboard",
+];
+
+const BUILDER_RESPONSES: Record<string, string> = {
+  default: `Main aapka project banane mein help karunga! Aap mujhe batayen:
+
+1. **Kya banana hai** -- website ya app ka naam aur purpose
+2. **Kaun use karega** -- aap akele ya multiple users
+3. **Main features** -- login, payment, dashboard, etc.
+4. **Design style** -- dark/light, minimal/colorful
+
+Jab aap describe karenge, main step-by-step plan banaunga aur aap Caffeine AI se implement karwa sakte hain!`,
+};
+
+function getBuilderResponse(userMessage: string): string {
+  const msg = userMessage.toLowerCase();
+  if (
+    msg.includes("restaurant") ||
+    msg.includes("food") ||
+    msg.includes("menu")
+  ) {
+    return `Restaurant website ke liye plan:
+
+**Pages:**
+- Home (hero, about, features)
+- Menu (categories, items, prices)
+- Booking (form with date/time/guests)
+- Contact (address, phone, map)
+
+**Features:**
+- Online table reservation form
+- Menu with categories (Starter, Main, Dessert, Drinks)
+- Gallery section
+- Admin panel for menu management
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"Restaurant ki website banao with online booking form, menu sections, aur admin panel jisme menu items add/edit kar sakein"\``;
+  }
+  if (msg.includes("task") || msg.includes("todo") || msg.includes("manage")) {
+    return `Task Manager App ka plan:
+
+**Features:**
+- Login system (Internet Identity)
+- Projects create/organize karein
+- Tasks add, complete, delete karein
+- Priority levels (High/Medium/Low)
+- Due dates aur reminders
+- Dashboard with stats
+
+**Admin features:**
+- Team members manage
+- All users' tasks dekhna
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"Task manager app banao with login, projects, tasks (with priority aur due date), aur admin dashboard"\``;
+  }
+  if (
+    msg.includes("portfolio") ||
+    msg.includes("blog") ||
+    msg.includes("personal")
+  ) {
+    return `Portfolio + Blog website ka plan:
+
+**Sections:**
+- Hero (name, title, CTA)
+- About (bio, skills, experience)
+- Projects showcase
+- Blog (articles, categories)
+- Contact form
+
+**Admin features:**
+- Blog posts write/publish/edit
+- Projects add/update
+- Messages inbox
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"Personal portfolio website banao with blog section, projects showcase, aur admin panel for content management"\``;
+  }
+  if (
+    msg.includes("e-commerce") ||
+    msg.includes("store") ||
+    msg.includes("shop") ||
+    msg.includes("product")
+  ) {
+    return `E-Commerce Store ka plan:
+
+**Pages:**
+- Home (hero, featured products)
+- Products (catalog, search, filter)
+- Product detail page
+- Cart aur checkout
+- Orders history
+
+**Admin features:**
+- Products add/edit/delete
+- Orders manage
+- Inventory track
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"E-commerce store banao with product catalog, cart, checkout, aur admin panel for products aur orders management"\``;
+  }
+  if (
+    msg.includes("school") ||
+    msg.includes("student") ||
+    msg.includes("college") ||
+    msg.includes("education")
+  ) {
+    return `Student Management System ka plan:
+
+**Features:**
+- Students register/manage
+- Attendance track karein
+- Marks/grades enter karein
+- Subjects aur classes manage
+- Reports generate
+
+**Roles:**
+- Admin -- full access
+- Teacher -- attendance aur marks
+- Student -- apna data dekhein
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"Student management system banao with attendance, marks, subjects management, aur alag roles for admin/teacher/student"\``;
+  }
+  if (msg.includes("quiz") || msg.includes("survey") || msg.includes("test")) {
+    return `Quiz App ka plan:
+
+**Features:**
+- Multiple choice questions
+- Timer per question
+- Live scoring
+- Leaderboard
+- Results aur detailed analysis
+
+**Admin features:**
+- Quiz create/edit
+- Questions add with images
+- Results export
+
+**Agle step:** Caffeine AI ko yeh prompt dein:
+\`"Online quiz app banao with timer, multiple choice questions, live leaderboard, aur admin panel for quiz creation"\``;
+  }
+  return `Bahut achha idea! Aapke project ke liye plan:
+
+**Aap batayen:**
+- Project ka naam kya hoga?
+- Main users kaun honge?
+- Kaunse features sabse important hain?
+- Koi specific design preference?
+
+Jab aap details denge, main ek complete **implementation plan** tayyar karunga jo aap directly Caffeine AI mein use kar sakte hain!
+
+Yeh examples dekh sakte hain:
+- Restaurant website
+- Task manager
+- Portfolio + Blog
+- E-commerce store
+- Student management
+- Quiz app`;
+}
+
+function ProjectBuilderChat() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<BuilderMessage[]>([
+    {
+      id: "welcome",
+      content: BUILDER_RESPONSES.default,
+      role: "assistant",
+      timestamp: Date.now(),
+    },
+  ]);
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const msgCount = messages.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [msgCount]);
+
+  const handleSend = (text?: string) => {
+    const content = (text ?? input).trim();
+    if (!content || sending) return;
+    const userMsg: BuilderMessage = {
+      id: Date.now().toString(),
+      content,
+      role: "user",
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setSending(true);
+    setTimeout(() => {
+      const reply = getBuilderResponse(content);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          content: reply,
+          role: "assistant",
+          timestamp: Date.now(),
+        },
+      ]);
+      setSending(false);
+    }, 800);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Messages */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-6 py-6 space-y-4"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {messages.map((msg, i) => (
+          <div
+            key={msg.id}
+            data-ocid={`builder.chat.item.${i + 1}`}
+            className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+          >
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                msg.role === "user" ? "btn-gradient" : ""
+              }`}
+              style={
+                msg.role === "assistant"
+                  ? {
+                      background: "oklch(0.55 0.22 278 / 0.15)",
+                      border: "1px solid oklch(0.55 0.22 278 / 0.3)",
+                    }
+                  : undefined
+              }
+            >
+              {msg.role === "user" ? (
+                <User className="w-4 h-4 text-white" />
+              ) : (
+                <Wand2 className="w-4 h-4 text-primary" />
+              )}
+            </div>
+            <div
+              className={`max-w-[78%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
+            >
+              <div
+                className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "rounded-tr-sm text-white"
+                    : "rounded-tl-sm text-foreground"
+                }`}
+                style={
+                  msg.role === "user"
+                    ? {
+                        background:
+                          "linear-gradient(135deg, oklch(0.55 0.24 278), oklch(0.55 0.2 220))",
+                      }
+                    : {
+                        background: "oklch(0.14 0.022 270)",
+                        border: "1px solid oklch(0.22 0.03 270 / 0.6)",
+                      }
+                }
+              >
+                {msg.content}
+              </div>
+              <span className="text-[10px] text-muted-foreground px-1">
+                {new Date(msg.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          </div>
+        ))}
+        {sending && (
+          <div className="flex gap-3">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "oklch(0.55 0.22 278 / 0.15)",
+                border: "1px solid oklch(0.55 0.22 278 / 0.3)",
+              }}
+            >
+              <Wand2 className="w-4 h-4 text-primary" />
+            </div>
+            <div
+              className="px-4 py-3 rounded-2xl rounded-tl-sm"
+              style={{
+                background: "oklch(0.14 0.022 270)",
+                border: "1px solid oklch(0.22 0.03 270 / 0.6)",
+              }}
+            >
+              <div className="flex gap-1.5 items-center">
+                <span
+                  className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <span
+                  className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Suggestion chips */}
+      {messages.length <= 1 && (
+        <div className="px-6 pb-3 flex flex-wrap gap-2">
+          {BUILDER_SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleSend(s)}
+              className="text-xs px-3 py-1.5 rounded-full transition-all hover:scale-105"
+              style={{
+                background: "oklch(0.55 0.22 278 / 0.1)",
+                border: "1px solid oklch(0.55 0.22 278 / 0.25)",
+                color: "oklch(0.78 0.14 278)",
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div
+        className="px-6 py-4 border-t"
+        style={{ borderColor: "oklch(0.20 0.03 270 / 0.6)" }}
+      >
+        <div
+          className="flex items-center gap-3 rounded-xl px-4 py-3"
+          style={{
+            background: "oklch(0.13 0.022 270)",
+            border: "1px solid oklch(0.25 0.04 270 / 0.8)",
+          }}
+        >
+          <input
+            type="text"
+            data-ocid="builder.chat.input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Apna project describe karein..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            disabled={sending}
+          />
+          <button
+            type="button"
+            data-ocid="builder.chat.submit_button"
+            onClick={() => handleSend()}
             disabled={!input.trim() || sending}
             className="w-9 h-9 rounded-lg btn-gradient flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Send message"
@@ -758,9 +1156,15 @@ export default function DashboardPage({
     },
     {
       id: "chat",
-      label: "Chat",
+      label: "AI Chat",
       icon: MessageSquare,
       ocid: "dashboard.nav.chat.link",
+    },
+    {
+      id: "builder",
+      label: "Project Builder",
+      icon: Code2,
+      ocid: "dashboard.nav.builder.link",
     },
     {
       id: "projects",
@@ -1018,6 +1422,7 @@ export default function DashboardPage({
             <h1 className="text-lg font-bold text-foreground">
               {activeTab === "overview" && "Overview"}
               {activeTab === "chat" && "AI Chat"}
+              {activeTab === "builder" && "Project Builder"}
               {activeTab === "settings" && "Settings"}
               {activeTab === "projects" && "Projects"}
               {activeTab === "users" && "User Management"}
@@ -1026,6 +1431,8 @@ export default function DashboardPage({
             <p className="text-xs text-muted-foreground">
               {activeTab === "overview" && "Your account at a glance"}
               {activeTab === "chat" && "Chat with Prashant AI"}
+              {activeTab === "builder" &&
+                "Apna project describe karein, plan payen"}
               {activeTab === "settings" && "Your account information"}
               {activeTab === "projects" && "Manage and track your projects"}
               {activeTab === "users" && "Admin view of all registered users"}
@@ -1086,6 +1493,18 @@ export default function DashboardPage({
                   className="flex-1 flex flex-col overflow-hidden"
                 >
                   <ChatInterface />
+                </motion.div>
+              )}
+              {activeTab === "builder" && (
+                <motion.div
+                  key="builder"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col overflow-hidden"
+                >
+                  <ProjectBuilderChat />
                 </motion.div>
               )}
               {activeTab === "settings" && (

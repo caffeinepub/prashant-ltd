@@ -123,14 +123,14 @@ function Navbar({ onNavigateDashboard, onNavigateLogin }: NavbarProps) {
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link, i) => (
               <button
                 type="button"
                 key={link.id}
                 data-ocid={`nav.link.${i + 1}`}
                 onClick={() => scrollTo(link.id)}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/5"
+                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-white/5"
               >
                 {link.label}
               </button>
@@ -194,7 +194,7 @@ function Navbar({ onNavigateDashboard, onNavigateLogin }: NavbarProps) {
             type="button"
             data-ocid="nav.toggle"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Toggle mobile menu"
           >
             {mobileOpen ? (
@@ -214,7 +214,7 @@ function Navbar({ onNavigateDashboard, onNavigateLogin }: NavbarProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "tween", duration: 0.25 }}
-            className="fixed inset-0 z-40 md:hidden"
+            className="fixed inset-0 z-40 lg:hidden"
           >
             <button
               type="button"
