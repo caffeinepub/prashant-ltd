@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Check,
+  ChevronLeft,
   ChevronRight,
   Download,
   Film,
+  Layers,
+  MessageSquare,
+  Mic,
   Music,
   Play,
   Scissors,
@@ -19,12 +23,13 @@ import {
   Star,
   Type,
   Upload,
+  Video,
   Volume2,
   Wand2,
   Zap,
 } from "lucide-react";
-import { motion } from "motion/react";
-import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface LandingPageProps {
   onOpenEditor: () => void;
@@ -77,6 +82,107 @@ const FEATURES = [
     title: "Export HD",
     desc: "Export in 720p or 1080p MP4/WebM. Fast render with no watermarks on Pro.",
     color: "oklch(0.62 0.22 305)",
+  },
+];
+
+const CAROUSEL_FEATURES = [
+  {
+    icon: Layers,
+    title: "Brand Kit",
+    desc: "Save your brand colors, fonts, and logos. Apply them instantly across all your projects.",
+    color: "oklch(0.65 0.22 270)",
+    tag: "Branding",
+  },
+  {
+    icon: Film,
+    title: "Templates",
+    desc: "Start with 8+ professionally designed video templates for any content type.",
+    color: "oklch(0.62 0.22 305)",
+    tag: "Quick Start",
+  },
+  {
+    icon: Sparkles,
+    title: "Elements",
+    desc: "Add shapes, stickers, lines, borders, and decorative elements to your canvas.",
+    color: "oklch(0.68 0.20 75)",
+    tag: "Design",
+  },
+  {
+    icon: Wand2,
+    title: "Background",
+    desc: "Choose from solid colors, stunning gradients, and geometric patterns for your backdrop.",
+    color: "oklch(0.60 0.22 195)",
+    tag: "Visual",
+  },
+  {
+    icon: Zap,
+    title: "Apps & Effects",
+    desc: "Video effects, animation presets, avatars, and auto-subtitle tools in one panel.",
+    color: "oklch(0.65 0.24 45)",
+    tag: "Effects",
+  },
+  {
+    icon: Sparkles,
+    title: "Magic Media",
+    desc: "AI-powered media generation UI — create images, graphics, and 3D assets from prompts.",
+    color: "oklch(0.60 0.26 305)",
+    tag: "AI",
+  },
+  {
+    icon: Upload,
+    title: "Uploads",
+    desc: "Drag & drop your images, videos, and audio files. Manage all your media in one place.",
+    color: "oklch(0.65 0.18 150)",
+    tag: "Media",
+  },
+  {
+    icon: Video,
+    title: "Chroma Key",
+    desc: "Green screen / chroma key tool with color picker, similarity, and spill reduction controls.",
+    color: "oklch(0.62 0.22 145)",
+    tag: "VFX",
+  },
+  {
+    icon: Music,
+    title: "Audio Library",
+    desc: "Browse 100+ tracks across Lo-Fi, Bollywood, Jazz, K-Pop, Synthwave, and more genres.",
+    color: "oklch(0.60 0.22 330)",
+    tag: "Audio",
+  },
+  {
+    icon: Mic,
+    title: "Record Voiceover",
+    desc: "Record your voice directly in the browser with one click. Instant playback and preview.",
+    color: "oklch(0.65 0.20 260)",
+    tag: "Voice",
+  },
+  {
+    icon: Volume2,
+    title: "Generate AI Voice",
+    desc: "Type any text and convert to natural speech. Choose from Natural, News Anchor, Storyteller styles.",
+    color: "oklch(0.62 0.22 305)",
+    tag: "AI",
+  },
+  {
+    icon: Download,
+    title: "File Converter",
+    desc: "Convert PDF, PNG, JPG, MP4, MP3, Excel, Word, PowerPoint files right in the editor.",
+    color: "oklch(0.65 0.18 200)",
+    tag: "Tools",
+  },
+  {
+    icon: MessageSquare,
+    title: "AI Chatbox",
+    desc: "Smart command-based assistant — type what you want and it applies the best edits automatically.",
+    color: "oklch(0.60 0.24 270)",
+    tag: "AI",
+  },
+  {
+    icon: Zap,
+    title: "Export HD",
+    desc: "Export in 720p or 1080p MP4/WebM with fast render. No watermarks on Pro plan.",
+    color: "oklch(0.68 0.20 75)",
+    tag: "Export",
   },
 ];
 
@@ -181,6 +287,301 @@ const FAQ = [
     a: "You can cancel anytime from your account settings. No hidden fees or penalties.",
   },
 ];
+
+// ─── Features Carousel ────────────────────────────────────────────────────────
+function FeaturesCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const total = CAROUSEL_FEATURES.length;
+
+  // Visible cards count based on window width
+  const [visibleCount, setVisibleCount] = useState(3);
+  useEffect(() => {
+    function update() {
+      if (window.innerWidth < 640) setVisibleCount(1);
+      else if (window.innerWidth < 1024) setVisibleCount(2);
+      else setVisibleCount(3);
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const maxIndex = total - visibleCount;
+
+  const goNext = useCallback(() => {
+    setDirection(1);
+    setCurrent((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  }, [maxIndex]);
+
+  const goPrev = useCallback(() => {
+    setDirection(-1);
+    setCurrent((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  }, [maxIndex]);
+
+  // Auto-slide every 3 seconds
+  useEffect(() => {
+    if (paused) return;
+    timerRef.current = setTimeout(goNext, 3000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [paused, goNext]);
+
+  // Recalculate maxIndex when visibleCount changes
+  useEffect(() => {
+    setCurrent((prev) => Math.min(prev, total - visibleCount));
+  }, [visibleCount, total]);
+
+  const visibleItems = CAROUSEL_FEATURES.slice(current, current + visibleCount);
+
+  return (
+    <section
+      className="py-24 px-4 sm:px-6 overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, oklch(0.07 0.008 280) 0%, oklch(0.09 0.012 285) 50%, oklch(0.07 0.008 280) 100%)",
+      }}
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Section header */}
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={stagger}
+          className="text-center mb-14"
+        >
+          <motion.div variants={fadeUp}>
+            <Badge
+              className="mb-4 px-4 py-1.5 text-sm"
+              style={{
+                background: "oklch(0.58 0.22 270 / 0.15)",
+                border: "1px solid oklch(0.58 0.22 270 / 0.4)",
+                color: "oklch(0.80 0.16 270)",
+              }}
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 inline" />
+              All Features
+            </Badge>
+          </motion.div>
+          <motion.h2
+            variants={fadeUp}
+            className="font-display text-4xl sm:text-5xl font-bold mb-4"
+          >
+            Everything You Need to <span className="text-gradient">Create</span>
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            className="text-muted-foreground text-lg max-w-2xl mx-auto"
+          >
+            From AI-powered tools to professional editing features — Meena gives
+            you the complete creative studio.
+          </motion.p>
+        </motion.div>
+
+        {/* Carousel */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <div
+            className="relative"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            data-ocid="features.carousel.panel"
+          >
+            {/* Cards container */}
+            <div className="overflow-hidden rounded-2xl">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={current}
+                  initial={{ x: direction * 60, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: direction * -60, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="grid gap-5"
+                  style={{
+                    gridTemplateColumns: `repeat(${visibleCount}, 1fr)`,
+                  }}
+                >
+                  {visibleItems.map((feat, idx) => {
+                    const globalIdx = current + idx;
+                    return (
+                      <div
+                        key={`${feat.title}-${globalIdx}`}
+                        data-ocid={`features.carousel.item.${globalIdx + 1}`}
+                        className="group relative rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.02] cursor-default"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, oklch(0.13 0.02 280 / 0.9), oklch(0.10 0.015 290 / 0.8))",
+                          border: `1px solid ${feat.color}30`,
+                          backdropFilter: "blur(16px)",
+                          boxShadow: `0 4px 40px ${feat.color}12, inset 0 1px 0 oklch(1 0 0 / 0.04)`,
+                        }}
+                      >
+                        {/* Glow orb */}
+                        <div
+                          className="absolute top-0 right-0 w-32 h-32 rounded-full pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity"
+                          style={{
+                            background: feat.color,
+                            filter: "blur(40px)",
+                            transform: "translate(30%, -30%)",
+                          }}
+                        />
+
+                        {/* Icon + tag row */}
+                        <div className="flex items-start justify-between relative z-10">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                            style={{
+                              background: `${feat.color}18`,
+                              border: `1px solid ${feat.color}35`,
+                              boxShadow: `0 0 24px ${feat.color}20`,
+                            }}
+                          >
+                            <feat.icon
+                              className="w-5 h-5"
+                              style={{ color: feat.color }}
+                            />
+                          </div>
+                          <span
+                            className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                            style={{
+                              background: `${feat.color}15`,
+                              color: feat.color,
+                              border: `1px solid ${feat.color}30`,
+                            }}
+                          >
+                            {feat.tag}
+                          </span>
+                        </div>
+
+                        {/* Text */}
+                        <div className="relative z-10">
+                          <h3 className="font-display font-bold text-lg mb-1.5 text-foreground">
+                            {feat.title}
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {feat.desc}
+                          </p>
+                        </div>
+
+                        {/* Bottom accent line */}
+                        <div
+                          className="absolute bottom-0 left-6 right-6 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          style={{
+                            background: `linear-gradient(90deg, transparent, ${feat.color}60, transparent)`,
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Prev / Next arrows */}
+            <button
+              type="button"
+              onClick={goPrev}
+              data-ocid="features.carousel.prev_button"
+              className="absolute -left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 z-10 hidden sm:flex"
+              style={{
+                background: "oklch(0.14 0.025 280)",
+                border: "1px solid oklch(0.28 0.04 280)",
+                boxShadow: "0 4px 20px oklch(0 0 0 / 0.4)",
+              }}
+              aria-label="Previous"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              data-ocid="features.carousel.next_button"
+              className="absolute -right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 z-10 hidden sm:flex"
+              style={{
+                background: "oklch(0.14 0.025 280)",
+                border: "1px solid oklch(0.28 0.04 280)",
+                boxShadow: "0 4px 20px oklch(0 0 0 / 0.4)",
+              }}
+              aria-label="Next"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+          </div>
+
+          {/* Mobile arrows */}
+          <div className="flex sm:hidden justify-center gap-3 mt-5">
+            <button
+              type="button"
+              onClick={goPrev}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{
+                background: "oklch(0.14 0.025 280)",
+                border: "1px solid oklch(0.28 0.04 280)",
+              }}
+              aria-label="Previous"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{
+                background: "oklch(0.14 0.025 280)",
+                border: "1px solid oklch(0.28 0.04 280)",
+              }}
+              aria-label="Next"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 mt-8">
+            {CAROUSEL_FEATURES.slice(0, maxIndex + 1).map((feat, i) => (
+              <button
+                key={feat.title}
+                type="button"
+                onClick={() => {
+                  setDirection(i > current ? 1 : -1);
+                  setCurrent(i);
+                }}
+                aria-label={`Go to slide ${i + 1}`}
+                className="transition-all duration-300"
+                style={{
+                  width: i === current ? "28px" : "8px",
+                  height: "8px",
+                  borderRadius: "4px",
+                  background:
+                    i === current
+                      ? "oklch(0.65 0.22 270)"
+                      : "oklch(0.30 0.03 280)",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Pause indicator */}
+          {paused && (
+            <p className="text-center text-xs text-muted-foreground mt-3 opacity-60">
+              Paused — move cursor away to resume
+            </p>
+          )}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
 function Navbar({
   onOpenEditor,
@@ -439,7 +840,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features grid */}
       <section id="features" className="py-24 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -516,6 +917,9 @@ export default function LandingPage({
           </motion.div>
         </div>
       </section>
+
+      {/* Auto-Sliding All Features Carousel */}
+      <FeaturesCarousel />
 
       {/* How It Works */}
       <section

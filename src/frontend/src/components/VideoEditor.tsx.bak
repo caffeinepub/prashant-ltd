@@ -1918,25 +1918,11 @@ function ExportModal({
   const [format, setFormat] = useState("mp4");
   const [exporting, setExporting] = useState(false);
   const [done, setDone] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const startExport = async () => {
     setExporting(true);
     setDone(false);
-    setDownloadUrl(null);
-    await new Promise((r) => setTimeout(r, 2000));
-    // Use real video if uploaded, else create a sample blob
-    let url = videoUrl;
-    if (!url) {
-      const blob = new Blob(
-        [
-          `Meena Video Export\nResolution: ${resolution}\nFormat: ${format}\nExported by Meena Video Editor`,
-        ],
-        { type: "text/plain" },
-      );
-      url = URL.createObjectURL(blob);
-    }
-    setDownloadUrl(url);
+    await new Promise((r) => setTimeout(r, 2500));
     setExporting(false);
     setDone(true);
   };
@@ -1944,8 +1930,6 @@ function ExportModal({
   const handleClose = () => {
     setDone(false);
     setExporting(false);
-    if (downloadUrl && !videoUrl) URL.revokeObjectURL(downloadUrl);
-    setDownloadUrl(null);
     onClose();
   };
 
@@ -2050,7 +2034,7 @@ function ExportModal({
           ) : (
             <Button
               onClick={startExport}
-              disabled={exporting}
+              disabled={!videoUrl || exporting}
               data-ocid="export.submit_button"
               className="w-full h-11 rounded-xl font-semibold text-white btn-gradient border-0"
             >
@@ -2069,36 +2053,9 @@ function ExportModal({
           )}
 
           {!videoUrl && (
-            <div
-              className="flex items-start gap-3 p-3 rounded-xl"
-              style={{
-                background: "oklch(0.13 0.02 280)",
-                border: "1px solid oklch(0.25 0.03 280)",
-              }}
-            >
-              <span className="text-lg">🎬</span>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">
-                  No video uploaded
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Upload a video to export it. Your project settings have been
-                  saved.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  data-ocid="export.close_button"
-                  className="mt-2 text-[11px] px-3 py-1 rounded-lg font-medium transition-opacity hover:opacity-80"
-                  style={{
-                    background: "oklch(0.45 0.18 305)",
-                    color: "white",
-                  }}
-                >
-                  Close &amp; Upload Video
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Upload a video first to export.
+            </p>
           )}
         </div>
       </DialogContent>
@@ -2709,64 +2666,6 @@ function AppsPanel() {
           ))}
         </div>
       </div>
-
-      <div>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-          Avatars
-        </p>
-        <div className="space-y-1.5">
-          {[
-            {
-              name: "Business Pro",
-              icon: "👔",
-              desc: "Professional presenter avatar",
-            },
-            {
-              name: "Casual Creator",
-              icon: "🎨",
-              desc: "Relaxed vlog-style avatar",
-            },
-            {
-              name: "Anime Style",
-              icon: "✨",
-              desc: "Animated anime character",
-            },
-            { name: "Presenter", icon: "🎤", desc: "Stage presenter avatar" },
-            { name: "Newscaster", icon: "📺", desc: "News anchor style" },
-            { name: "Storyteller", icon: "📖", desc: "Narrative storyteller" },
-          ].map((avatar, i) => (
-            <div
-              key={avatar.name}
-              className="flex items-start gap-2 p-2 rounded-lg"
-              style={{
-                background: "oklch(0.13 0.015 280)",
-                border: "1px solid oklch(0.20 0.02 280)",
-              }}
-              data-ocid={`apps.avatars.item.${i + 1}`}
-            >
-              <span className="text-lg leading-none mt-0.5">{avatar.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">{avatar.name}</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">
-                  {avatar.desc}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => toast.success(`${avatar.name} added to canvas!`)}
-                data-ocid={`apps.avatars.use_button.${i + 1}`}
-                className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 hover:opacity-90 transition-opacity"
-                style={{
-                  background: "oklch(0.45 0.18 305)",
-                  color: "oklch(0.95 0.01 280)",
-                }}
-              >
-                Use
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -3334,20 +3233,12 @@ function FileConverterPanel() {
           {done && (
             <button
               type="button"
-              onClick={() => {
-                const fileContent = `Converted file: ${fileName ?? "file"}\nFormat: ${ct.to}\nDate: ${new Date().toLocaleString()}\nConverted by Meena Video Editor`;
-                const blob = new Blob([fileContent], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `converted_file.${ct.to.toLowerCase()}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                toast.success("File downloaded successfully!");
-              }}
-              data-ocid="convert.download_button"
+              onClick={() =>
+                toast.info(
+                  "Conversion simulated — in production this would use a server-side converter",
+                )
+              }
+              data-ocid="converter.primary_button"
               className="w-full py-1.5 rounded-md text-xs font-medium"
               style={{
                 background:
@@ -3369,13 +3260,7 @@ interface AIResponseEntry {
   keywords: string[];
   response: string;
   suggestions?: string[];
-  actionApplied?: {
-    icon: string;
-    label: string;
-    detail: string;
-    openPanel?: string;
-    downloadable?: boolean;
-  };
+  actionApplied?: { icon: string; label: string; detail: string };
 }
 
 const AI_RESPONSES: AIResponseEntry[] = [
@@ -3393,7 +3278,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🎵",
       label: "Applied: Lo-Fi Chill",
-      openPanel: "audio",
       detail: "Soft ambient track — perfect for any video style",
     },
     suggestions: [
@@ -3408,7 +3292,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🎨",
       label: "Applied: Deep Space Gradient",
-      openPanel: "bg",
       detail: "Dark purple-blue gradient — cinematic & professional",
     },
     suggestions: [
@@ -3423,7 +3306,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "✍️",
       label: "Applied: Cinematic Title",
-      openPanel: "text",
       detail: "Bold centered heading — click to edit the text",
     },
     suggestions: [
@@ -3438,7 +3320,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🎬",
       label: "Applied: Cinematic Filter",
-      openPanel: "text",
       detail: "Professional color grade with deep contrast",
     },
     suggestions: ["Try Warm tone", "Apply Vintage look", "Make it brighter"],
@@ -3449,7 +3330,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "✂️",
       label: "Applied: Smart Trim",
-      openPanel: "text",
       detail: "Start/end handles ready — drag to adjust cut points",
     },
     suggestions: ["Set start time", "Cut end of video", "Remove silence"],
@@ -3460,7 +3340,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "⬇️",
       label: "Export Ready: 1080p MP4",
-      downloadable: true,
       detail: "Highest quality — click Export button in top toolbar",
     },
     suggestions: ["Export 720p", "Download WebM", "Save project"],
@@ -3471,7 +3350,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🟢",
       label: "Applied: Chroma Key (Green)",
-      openPanel: "chroma",
       detail: "Background removed — adjust Similarity slider to fine-tune",
     },
     suggestions: [
@@ -3495,8 +3373,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🔄",
       label: "Converting: MP4 → MP3",
-      openPanel: "convert",
-      downloadable: true,
       detail: "Audio extracted — open Convert tab to download",
     },
     suggestions: ["PDF to PNG", "Excel to CSV", "Word to TXT"],
@@ -3507,7 +3383,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "📋",
       label: "Applied: Promo Template",
-      openPanel: "templates",
       detail: "Modern dark theme with title, text & music pre-set",
     },
     suggestions: [
@@ -3522,7 +3397,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🏷️",
       label: "Applied: Brand Kit",
-      openPanel: "brand",
       detail: "Brand colors, logo position & font set automatically",
     },
     suggestions: ["Change brand color", "Upload new logo", "Choose brand font"],
@@ -3533,7 +3407,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "✨",
       label: "Applied: Cinematic Zoom",
-      openPanel: "apps",
       detail: "Smooth zoom-in effect on scene transitions",
     },
     suggestions: [
@@ -3548,7 +3421,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🎤",
       label: "Ready: Record Voiceover",
-      openPanel: "audio",
       detail: "Mic is set up — press the red button in Music tab to record",
     },
     suggestions: [
@@ -3563,7 +3435,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "🗣️",
       label: "Applied: AI Voice — Natural Style",
-      openPanel: "audio",
       detail: "Type your script and click Generate to create voiceover",
     },
     suggestions: [
@@ -3578,7 +3449,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "📱",
       label: "Applied: Social Media Preset",
-      openPanel: "templates",
       detail: "Bright filter + bold text + upbeat music — 1080p ready",
     },
     suggestions: [
@@ -3593,7 +3463,6 @@ const AI_RESPONSES: AIResponseEntry[] = [
     actionApplied: {
       icon: "📢",
       label: "Applied: Promo Preset",
-      openPanel: "templates",
       detail: "Cinematic filter + brand logo + engaging text overlays",
     },
     suggestions: ["Add brand logo", "Change CTA text", "Export 1080p"],
@@ -3657,16 +3526,10 @@ interface ChatMessage {
   role: "user" | "bot";
   text: string;
   suggestions?: string[];
-  actionApplied?: {
-    icon: string;
-    label: string;
-    detail: string;
-    openPanel?: string;
-    downloadable?: boolean;
-  };
+  actionApplied?: { icon: string; label: string; detail: string };
 }
 
-function AIChatbox({ onOpenPanel }: { onOpenPanel?: (panel: string) => void }) {
+function AIChatbox() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -3722,13 +3585,7 @@ function AIChatbox({ onOpenPanel }: { onOpenPanel?: (panel: string) => void }) {
       let reply: {
         text: string;
         suggestions?: string[];
-        actionApplied?: {
-          icon: string;
-          label: string;
-          detail: string;
-          openPanel?: string;
-          downloadable?: boolean;
-        };
+        actionApplied?: { icon: string; label: string; detail: string };
       } =
         FALLBACK_RESPONSES[
           Math.floor(Math.random() * FALLBACK_RESPONSES.length)
@@ -3965,77 +3822,30 @@ function AIChatbox({ onOpenPanel }: { onOpenPanel?: (panel: string) => void }) {
                   )}
                 {m.role === "bot" && m.actionApplied && (
                   <div
-                    className="max-w-[90%] mt-1.5 rounded-xl px-3 py-2.5 flex flex-col gap-2"
+                    className="max-w-[90%] mt-1.5 rounded-xl px-3 py-2.5 flex items-start gap-2"
                     style={{
                       background:
                         "linear-gradient(135deg, oklch(0.18 0.06 150 / 0.6), oklch(0.15 0.04 160 / 0.4))",
                       border: "1px solid oklch(0.45 0.15 150 / 0.5)",
                     }}
                   >
-                    <div className="flex items-start gap-2">
-                      <span className="text-base leading-none mt-0.5 flex-shrink-0">
-                        {m.actionApplied.icon}
-                      </span>
-                      <div>
-                        <p
-                          className="text-[11px] font-semibold leading-tight"
-                          style={{ color: "oklch(0.80 0.18 150)" }}
-                        >
-                          {m.actionApplied.label}
-                        </p>
-                        <p
-                          className="text-[10px] leading-tight mt-0.5"
-                          style={{ color: "oklch(0.65 0.06 150)" }}
-                        >
-                          {m.actionApplied.detail}
-                        </p>
-                      </div>
+                    <span className="text-base leading-none mt-0.5 flex-shrink-0">
+                      {m.actionApplied.icon}
+                    </span>
+                    <div>
+                      <p
+                        className="text-[11px] font-semibold leading-tight"
+                        style={{ color: "oklch(0.80 0.18 150)" }}
+                      >
+                        {m.actionApplied.label}
+                      </p>
+                      <p
+                        className="text-[10px] leading-tight mt-0.5"
+                        style={{ color: "oklch(0.65 0.06 150)" }}
+                      >
+                        {m.actionApplied.detail}
+                      </p>
                     </div>
-                    {(m.actionApplied.openPanel ||
-                      m.actionApplied.downloadable) && (
-                      <div className="flex gap-2 mt-0.5">
-                        {m.actionApplied.openPanel && (
-                          <button
-                            onClick={() => {
-                              if (onOpenPanel)
-                                onOpenPanel(m.actionApplied!.openPanel!);
-                              setOpen(false);
-                            }}
-                            type="button"
-                            data-ocid="chat.open_panel.button"
-                            className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
-                            style={{
-                              background: "oklch(0.25 0.08 260 / 0.7)",
-                              border: "1px solid oklch(0.45 0.15 260 / 0.5)",
-                              color: "oklch(0.80 0.18 260)",
-                            }}
-                          >
-                            ↗ Open
-                          </button>
-                        )}
-                        {m.actionApplied.downloadable && (
-                          <button
-                            onClick={() => {
-                              // For export: close chat and trigger export dialog via custom event
-                              setOpen(false);
-                              window.dispatchEvent(
-                                new CustomEvent("meena-open-export"),
-                              );
-                            }}
-                            type="button"
-                            data-ocid="chat.download.button"
-                            className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all"
-                            style={{
-                              background: "oklch(0.22 0.07 150 / 0.7)",
-                              border: "1px solid oklch(0.45 0.15 150 / 0.5)",
-                              color: "oklch(0.80 0.18 150)",
-                            }}
-                          >
-                            ⬇ Download
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -4249,12 +4059,6 @@ export default function VideoEditor({
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
-
-  useEffect(() => {
-    const handler = () => setExportOpen(true);
-    window.addEventListener("meena-open-export", handler);
-    return () => window.removeEventListener("meena-open-export", handler);
-  }, []);
 
   return (
     <div
@@ -4517,7 +4321,7 @@ export default function VideoEditor({
           className="flex-1 flex flex-col overflow-hidden relative canvas-bg"
           style={{ background: "oklch(0.07 0.008 280)" }}
         >
-          <AIChatbox onOpenPanel={setActivePanel} />
+          <AIChatbox />
           <div className="flex-1 flex flex-col p-4 overflow-hidden">
             {/* Active filter badge */}
             {activeFilter !== "none" && (
