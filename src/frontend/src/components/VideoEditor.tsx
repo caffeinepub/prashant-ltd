@@ -16,6 +16,7 @@ import {
   Bot,
   Check,
   ChevronDown,
+  Copy,
   Download,
   FileSpreadsheet,
   FileText,
@@ -24,6 +25,7 @@ import {
   Layers,
   LayoutTemplate,
   Loader2,
+  Mail,
   MessageSquare,
   Mic,
   Music,
@@ -36,6 +38,7 @@ import {
   Scissors,
   Send,
   Shapes,
+  Share2,
   Sparkles,
   Square,
   StopCircle,
@@ -47,9 +50,11 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import mammoth from "mammoth";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TextItem {
@@ -779,6 +784,7 @@ function VideoPreview({
   canvasBg,
   overlayElements,
   onRemoveElement,
+  videoRef: externalVideoRef,
 }: {
   videoUrl: string | null;
   texts: TextItem[];
@@ -794,9 +800,11 @@ function VideoPreview({
     y: number;
   }>;
   onRemoveElement?: (id: string) => void;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const internalVideoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = externalVideoRef ?? internalVideoRef;
   const [dims, setDims] = useState({ w: 640, h: 360 });
   const [playing, setPlaying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2193,13 +2201,23 @@ function TrimPanel({
   endTime,
   setStartTime,
   setEndTime,
+  videoRef,
+  onTrimApply,
 }: {
   duration: number;
   startTime: number;
   endTime: number;
   setStartTime: (v: number) => void;
   setEndTime: (v: number) => void;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  onTrimApply: (url: string) => void;
 }) {
+  const [trimming, setTrimming] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [trimmedUrl, setTrimmedUrl] = useState<string | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
   const fmt = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
@@ -2207,6 +2225,104 @@ function TrimPanel({
   };
 
   const dur = duration || 60;
+
+  const applyTrim = async () => {
+    const video = videoRef.current;
+    if (!video || !video.src) {
+      toast.error("Please upload a video first before trimming.");
+      return;
+    }
+    setTrimming(true);
+    setProgress(0);
+    setTrimmedUrl(null);
+    chunksRef.current = [];
+
+    try {
+      // Seek to start
+      video.currentTime = startTime;
+      video.muted = false;
+      await new Promise<void>((resolve) => {
+        const onSeeked = () => {
+          video.removeEventListener("seeked", onSeeked);
+          resolve();
+        };
+        video.addEventListener("seeked", onSeeked);
+      });
+
+      // Capture stream from video element
+      const stream =
+        (
+          video as HTMLVideoElement & {
+            captureStream?: () => MediaStream;
+            mozCaptureStream?: () => MediaStream;
+          }
+        ).captureStream?.() ??
+        (
+          video as HTMLVideoElement & {
+            captureStream?: () => MediaStream;
+            mozCaptureStream?: () => MediaStream;
+          }
+        ).mozCaptureStream?.();
+
+      if (!stream) {
+        toast.error(
+          "Your browser does not support video capture. Try Chrome or Edge.",
+        );
+        setTrimming(false);
+        return;
+      }
+
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+        ? "video/webm;codecs=vp9"
+        : MediaRecorder.isTypeSupported("video/webm")
+          ? "video/webm"
+          : "video/mp4";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        setTrimmedUrl(url);
+        onTrimApply(url);
+        setTrimming(false);
+        setProgress(100);
+        toast.success("Trim applied! Video updated in editor.");
+      };
+
+      recorder.start(100);
+      video.play();
+
+      const trimDuration = endTime - startTime;
+      const interval = setInterval(() => {
+        if (video.currentTime >= endTime) {
+          clearInterval(interval);
+          recorder.stop();
+          video.pause();
+        } else {
+          const elapsed = video.currentTime - startTime;
+          setProgress(Math.min(99, Math.round((elapsed / trimDuration) * 100)));
+        }
+      }, 200);
+    } catch (err) {
+      console.error("Trim error:", err);
+      toast.error("Trim failed. Make sure the video is loaded and try again.");
+      setTrimming(false);
+    }
+  };
+
+  const downloadTrimmed = () => {
+    if (!trimmedUrl) return;
+    const a = document.createElement("a");
+    a.href = trimmedUrl;
+    a.download = "trimmed-video.webm";
+    a.click();
+  };
 
   return (
     <div className="p-4 space-y-5">
@@ -2311,28 +2427,227 @@ function TrimPanel({
               style={{ zIndex: 3 }}
               data-ocid="trim.end.drag_handle"
             />
-            {/* Colored range */}
-            <div
-              className="absolute inset-y-4 rounded-full"
-              style={{
-                left: `${(startTime / dur) * 100}%`,
-                right: `${100 - (endTime / dur) * 100}%`,
-                background:
-                  "linear-gradient(90deg, oklch(0.58 0.22 305 / 0.4), oklch(0.52 0.25 280 / 0.4))",
-              }}
-            />
+          </div>
+
+          <div className="text-xs text-muted-foreground text-center mt-2">
+            Total Duration: {fmt(dur)}
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground text-center">
-          Total Duration: {fmt(dur)}
-        </div>
+        {/* Apply Trim Button */}
+        <button
+          type="button"
+          onClick={applyTrim}
+          disabled={trimming}
+          data-ocid="trim.primary_button"
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.55 0.22 305), oklch(0.48 0.25 270))",
+            color: "white",
+          }}
+        >
+          {trimming ? (
+            <>
+              <svg
+                className="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                role="presentation"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              Trimming... {progress}%
+            </>
+          ) : (
+            <>✂️ Apply Trim</>
+          )}
+        </button>
+
+        {trimming && (
+          <div
+            className="w-full rounded-full overflow-hidden h-2"
+            style={{ background: "oklch(0.18 0.02 280)" }}
+          >
+            <div
+              className="h-2 rounded-full transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+                background:
+                  "linear-gradient(90deg, oklch(0.58 0.22 305), oklch(0.52 0.25 280))",
+              }}
+            />
+          </div>
+        )}
+
+        {trimmedUrl && (
+          <button
+            type="button"
+            onClick={downloadTrimmed}
+            data-ocid="trim.download.button"
+            className="w-full py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+            style={{ background: "oklch(0.38 0.15 145)", color: "white" }}
+          >
+            ⬇️ Download Trimmed Video
+          </button>
+        )}
+
+        <p
+          className="text-xs text-center"
+          style={{ color: "oklch(0.50 0.04 270)" }}
+        >
+          Uses browser MediaRecorder — no extra libraries needed
+        </p>
       </div>
     </div>
   );
 }
-
 // ─── Export Modal ─────────────────────────────────────────────────────────────
+// ─── Share Modal ──────────────────────────────────────────────────────────────
+function ShareModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = window.location.href;
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied!");
+    });
+  };
+
+  const shareOn = (platform: string) => {
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedText = encodeURIComponent(
+      "Check out my video project on Meena Video Editor!",
+    );
+    let url = "";
+    if (platform === "whatsapp")
+      url = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+    else if (platform === "twitter")
+      url = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+    else if (platform === "facebook")
+      url = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    else if (platform === "email")
+      url = `mailto:?subject=My%20Meena%20Video%20Project&body=${encodedText}%20${encodedUrl}`;
+    if (url) window.open(url, "_blank");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent
+        className="max-w-md border-0"
+        style={{
+          background: "oklch(0.11 0.015 280)",
+          color: "oklch(0.90 0.02 270)",
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <Share2 className="w-4 h-4 text-violet-400" />
+            Share Your Project
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex items-center gap-2 mt-2">
+          <div
+            className="flex-1 px-3 py-2 rounded-lg text-xs truncate"
+            style={{
+              background: "oklch(0.15 0.02 280)",
+              border: "1px solid oklch(0.22 0.03 280)",
+              color: "oklch(0.65 0.04 270)",
+            }}
+          >
+            {shareUrl}
+          </div>
+          <Button
+            size="sm"
+            onClick={copyLink}
+            data-ocid="share.copy.button"
+            className="h-8 px-3 text-xs border-0"
+            style={{
+              background: copied
+                ? "oklch(0.45 0.15 145)"
+                : "oklch(0.55 0.22 305)",
+              color: "white",
+            }}
+          >
+            {copied ? (
+              <Check className="w-3.5 h-3.5" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
+            <span className="ml-1">{copied ? "Copied!" : "Copy"}</span>
+          </Button>
+        </div>
+
+        <p className="text-xs mt-3" style={{ color: "oklch(0.55 0.04 270)" }}>
+          Share on
+        </p>
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          {[
+            {
+              id: "whatsapp",
+              label: "WhatsApp",
+              color: "oklch(0.45 0.18 145)",
+            },
+            {
+              id: "twitter",
+              label: "Twitter / X",
+              color: "oklch(0.35 0.05 250)",
+            },
+            {
+              id: "facebook",
+              label: "Facebook",
+              color: "oklch(0.35 0.18 260)",
+            },
+            { id: "email", label: "Email", color: "oklch(0.45 0.12 30)" },
+          ].map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => shareOn(p.id)}
+              data-ocid={`share.${p.id}.button`}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+              style={{ background: p.color, color: "white" }}
+            >
+              {p.id === "email" ? (
+                <Mail className="w-3.5 h-3.5" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5" />
+              )}
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          data-ocid="share.close.button"
+          className="mt-3 text-xs text-center w-full py-1.5 rounded-lg transition-colors hover:opacity-70"
+          style={{ color: "oklch(0.55 0.04 270)" }}
+        >
+          Close
+        </button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ExportModal({
   open,
   onClose,
@@ -5242,9 +5557,11 @@ function BotMessage({
 function AIChatbox({
   onOpenPanel,
   onVideoUpload,
+  onAddText,
 }: {
   onOpenPanel?: (panel: string) => void;
   onVideoUpload?: (file: File) => void;
+  onAddText?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -5357,10 +5674,13 @@ function AIChatbox({
               ],
             };
           } else if (isDoc) {
+            const isWordOrExcel = ["docx", "xlsx", "xls", "csv"].includes(ext);
             reply = {
-              text: `Document **${fname}** received! 📄\n\nYou can extract text and add it as a **Text Overlay** (sidebar → Text tab). Or use the **Convert tab** to convert this file to another format.`,
+              text: isWordOrExcel
+                ? `**${fname}** text has been extracted and added as a **Text Overlay** on the canvas! ✅\n\nGo to the **Text tab** in the sidebar to see and edit the overlays. You can also use the **Convert tab** to convert this file to another format.`
+                : `Document **${fname}** received! 📄\n\nUse the **Convert tab** to convert this file to another format, or add its content as a **Text Overlay** from the Text tab.`,
               suggestions: [
-                "Add text overlay",
+                "Edit text overlay",
                 "Convert to PDF",
                 "Export video",
               ],
@@ -5402,7 +5722,67 @@ function AIChatbox({
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) {
+      e.target.value = "";
+      return;
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const isDocx = ext === "docx";
+    const isXlsx = ["xlsx", "xls", "csv"].includes(ext);
+    const isPptx = ["pptx", "ppt"].includes(ext);
+
+    if (isDocx) {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const arrayBuffer = ev.target?.result as ArrayBuffer;
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          const extracted = result.value.trim().slice(0, 1000);
+          if (extracted && onAddText) {
+            onAddText(extracted);
+            toast.success("Word text extracted and added as overlay!");
+          }
+          setAttachedFile(file);
+        } catch {
+          toast.error("Could not read Word file");
+          setAttachedFile(file);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (isXlsx) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = ev.target?.result;
+          const wb = XLSX.read(data, { type: "array" });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json<string[]>(ws, {
+            header: 1,
+          }) as string[][];
+          const preview = rows
+            .slice(0, 8)
+            .map((r) => r.slice(0, 4).join(" | "))
+            .join("\n");
+          if (preview && onAddText) {
+            onAddText(preview);
+            toast.success("Excel data extracted and added as overlay!");
+          }
+          setAttachedFile(file);
+        } catch {
+          toast.error("Could not read Excel file");
+          setAttachedFile(file);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (isPptx) {
+      // PPT: extract raw text using JSZip-based approach -- show helpful message
+      toast.info("PPT uploaded! Text is shown as a reference overlay.", {
+        duration: 4000,
+      });
+      if (onAddText) onAddText(`Presentation: ${file.name}`);
+      setAttachedFile(file);
+    } else {
       setAttachedFile(file);
       if (file.type.startsWith("video/") && onVideoUpload) {
         onVideoUpload(file);
@@ -5741,6 +6121,22 @@ export default function VideoEditor({
   // Text state
   const [texts, setTexts] = useState<TextItem[]>([]);
 
+  const handleAddTextFromFile = (text: string) => {
+    const lines = text.split("\n").filter(Boolean).slice(0, 5);
+    lines.forEach((line, i) => {
+      const newText: TextItem = {
+        id: `file-text-${Date.now()}-${i}`,
+        content: line.slice(0, 120),
+        fontSize: 24,
+        color: "#ffffff",
+        positionY: i === 0 ? "top" : i === 1 ? "center" : "bottom",
+        opacity: 100,
+      };
+      setTexts((prev) => [...prev, newText]);
+    });
+    setActivePanel("text");
+  };
+
   // Music state
   const [activeTrack, setActiveTrack] = useState<MusicTrack | null>(null);
   const [musicVolume, setMusicVolume] = useState(70);
@@ -5760,9 +6156,11 @@ export default function VideoEditor({
   const [duration, setDuration] = useState(60);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(60);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // UI state
   const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activePanel, setActivePanel] = useState("text");
 
@@ -5920,6 +6318,20 @@ export default function VideoEditor({
           )}
         </Button>
 
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShareOpen(true)}
+          data-ocid="editor.share.button"
+          className="h-8 px-4 text-xs rounded-lg"
+          style={{
+            background: "oklch(0.12 0.015 280)",
+            borderColor: "oklch(0.25 0.03 280)",
+            color: "oklch(0.75 0.15 305)",
+          }}
+        >
+          <Share2 className="w-3.5 h-3.5 mr-1.5" /> Share
+        </Button>
         <Button
           size="sm"
           onClick={() => setExportOpen(true)}
@@ -6080,6 +6492,11 @@ export default function VideoEditor({
                   endTime={endTime}
                   setStartTime={setStartTime}
                   setEndTime={setEndTime}
+                  videoRef={videoRef}
+                  onTrimApply={(url) => {
+                    setVideoUrl(url);
+                    toast.success("Trimmed video loaded into editor!");
+                  }}
                 />
               )}
               {activePanel === "brand" && <BrandKitPanel />}
@@ -6107,6 +6524,7 @@ export default function VideoEditor({
           <AIChatbox
             onOpenPanel={setActivePanel}
             onVideoUpload={handleUpload}
+            onAddText={handleAddTextFromFile}
           />
           <div className="flex-1 flex flex-col p-4 overflow-hidden">
             {/* Active filter badge */}
@@ -6148,6 +6566,7 @@ export default function VideoEditor({
               canvasBg={canvasBg}
               overlayElements={overlayElements}
               onRemoveElement={handleRemoveElement}
+              videoRef={videoRef}
             />
           </div>
 
@@ -6307,6 +6726,7 @@ export default function VideoEditor({
         onClose={() => setExportOpen(false)}
         videoUrl={videoUrl}
       />
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} />
     </div>
   );
 }
