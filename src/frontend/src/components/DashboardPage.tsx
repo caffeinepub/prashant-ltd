@@ -181,7 +181,7 @@ function ChatInterface() {
                 Start a Conversation
               </h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Ask Prashant AI anything — it's here to help you build smarter.
+                Ask Meena AI anything — it's here to help you build smarter.
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@ function ChatInterface() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message Prashant AI..."
+            placeholder="Message Meena AI..."
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             disabled={sending}
           />
@@ -1231,7 +1231,7 @@ export default function DashboardPage({
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <span className="text-base font-bold tracking-tight text-foreground">
-              Prashant<span className="text-gradient"> Ltd</span>
+              Meena<span className="text-gradient"> Video Editor</span>
             </span>
           </button>
         </div>
@@ -1321,7 +1321,7 @@ export default function DashboardPage({
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="font-bold text-sm text-foreground">
-            Prashant<span className="text-gradient"> Ltd</span>
+            Meena<span className="text-gradient"> Video Editor</span>
           </span>
         </button>
         <div className="flex items-center gap-2">
@@ -1430,7 +1430,7 @@ export default function DashboardPage({
             </h1>
             <p className="text-xs text-muted-foreground">
               {activeTab === "overview" && "Your account at a glance"}
-              {activeTab === "chat" && "Chat with Prashant AI"}
+              {activeTab === "chat" && "Chat with Meena AI"}
               {activeTab === "builder" &&
                 "Apna project describe karein, plan payen"}
               {activeTab === "settings" && "Your account information"}

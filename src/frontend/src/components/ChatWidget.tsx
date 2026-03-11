@@ -179,7 +179,7 @@ export default function ChatWidget() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Prashant AI
+                    Meena AI
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isLoggedIn ? "Online · Ready to help" : "Login required"}
@@ -211,7 +211,7 @@ export default function ChatWidget() {
                   <MessageSquare className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Chat with Prashant AI
+                  Chat with Meena AI
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Login to start chatting with our AI assistant and get instant
@@ -264,7 +264,7 @@ export default function ChatWidget() {
                         <MessageSquare className="w-6 h-6 text-primary" />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Start a conversation with Prashant AI
+                        Start a conversation with Meena AI
                       </p>
                     </div>
                   ) : (
@@ -380,7 +380,7 @@ export default function ChatWidget() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Message Prashant AI..."
+                      placeholder="Message Meena AI..."
                       className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                       disabled={sending}
                     />

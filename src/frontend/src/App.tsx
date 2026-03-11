@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import DashboardPage from "./components/DashboardPage";
 import LandingPage from "./components/LandingPage";
 import VideoEditor from "./components/VideoEditor";
 import VideoEditorLogin from "./components/VideoEditorLogin";
 
-export type Page = "landing" | "login" | "editor";
+export type Page = "landing" | "login" | "editor" | "dashboard";
 
 export default function App() {
   const isLoggedIn = !!localStorage.getItem("meena_logged_in");
@@ -20,9 +21,17 @@ export default function App() {
     }
   };
 
+  const goToDashboard = () => {
+    if (loggedIn) {
+      setPage("dashboard");
+    } else {
+      setPage("login");
+    }
+  };
+
   const handleLogin = () => {
     setLoggedIn(true);
-    setPage("editor");
+    setPage("dashboard");
   };
 
   const handleGuest = () => {
@@ -49,7 +58,10 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <LandingPage onOpenEditor={goToEditor} />
+            <LandingPage
+              onOpenEditor={goToEditor}
+              onDashboard={goToDashboard}
+            />
           </motion.div>
         )}
         {page === "login" && (
@@ -75,6 +87,20 @@ export default function App() {
               onBack={() => setPage("landing")}
               isLoggedIn={loggedIn}
               onLogout={handleLogout}
+            />
+          </motion.div>
+        )}
+        {page === "dashboard" && (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <DashboardPage
+              onNavigateHome={() => setPage("landing")}
+              onNavigateUpgrade={() => setPage("editor")}
             />
           </motion.div>
         )}

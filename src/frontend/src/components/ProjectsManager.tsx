@@ -74,7 +74,7 @@ const SAMPLE_PROJECTS: Project[] = [
     id: "1",
     title: "AI Chat Integration",
     description:
-      "Integrate the Prashant AI assistant into the main product dashboard for real-time customer support.",
+      "Integrate the Meena AI assistant into the main product dashboard for real-time customer support.",
     status: "active",
     createdAt: "Jan 12, 2025",
   },

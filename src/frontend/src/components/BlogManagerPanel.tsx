@@ -49,7 +49,7 @@ export interface BlogPostData {
   updatedAt: string;
 }
 
-const STORAGE_KEY = "prashantltd_blog_posts";
+const STORAGE_KEY = "meenavideo_blog_posts";
 
 function loadPosts(): BlogPostData[] {
   try {

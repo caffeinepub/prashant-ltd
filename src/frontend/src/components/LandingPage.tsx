@@ -28,6 +28,7 @@ import { useState } from "react";
 
 interface LandingPageProps {
   onOpenEditor: () => void;
+  onDashboard?: () => void;
 }
 
 const fadeUp = {
@@ -181,7 +182,10 @@ const FAQ = [
   },
 ];
 
-function Navbar({ onOpenEditor }: { onOpenEditor: () => void }) {
+function Navbar({
+  onOpenEditor,
+  onDashboard,
+}: { onOpenEditor: () => void; onDashboard?: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <header
@@ -219,6 +223,16 @@ function Navbar({ onOpenEditor }: { onOpenEditor: () => void }) {
         </nav>
 
         <div className="flex items-center gap-3">
+          {onDashboard && (
+            <Button
+              onClick={onDashboard}
+              data-ocid="nav.dashboard.button"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground hidden sm:flex"
+            >
+              Dashboard
+            </Button>
+          )}
           <Button
             onClick={onOpenEditor}
             data-ocid="nav.open_editor.button"
@@ -269,10 +283,13 @@ function Navbar({ onOpenEditor }: { onOpenEditor: () => void }) {
   );
 }
 
-export default function LandingPage({ onOpenEditor }: LandingPageProps) {
+export default function LandingPage({
+  onOpenEditor,
+  onDashboard,
+}: LandingPageProps) {
   return (
     <div className="relative">
-      <Navbar onOpenEditor={onOpenEditor} />
+      <Navbar onOpenEditor={onOpenEditor} onDashboard={onDashboard} />
 
       {/* Hero */}
       <section

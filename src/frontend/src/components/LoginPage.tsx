@@ -64,7 +64,7 @@ export default function LoginPage({ onNavigateHome }: LoginPageProps) {
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="text-base font-bold tracking-tight text-foreground">
-            Prashant<span className="text-gradient"> Ltd</span>
+            Meena<span className="text-gradient"> Video Editor</span>
           </span>
         </button>
 
@@ -100,7 +100,7 @@ export default function LoginPage({ onNavigateHome }: LoginPageProps) {
               </div>
 
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                Welcome to Prashant Ltd
+                Welcome to Meena Video Editor
               </h1>
               <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
                 Use your account or create a new one. No password required —
