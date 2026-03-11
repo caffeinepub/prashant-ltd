@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Sora", "system-ui", "sans-serif"],
+        sans: ["Outfit", "system-ui", "sans-serif"],
         display: ["Bricolage Grotesque", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
@@ -57,14 +57,17 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        glow: "0 0 30px oklch(0.58 0.22 305 / 0.35)",
-        "glow-sm": "0 0 15px oklch(0.58 0.22 305 / 0.25)",
-        panel: "4px 0 24px oklch(0 0 0 / 0.4)",
+        glow: "0 0 32px oklch(0.58 0.23 270 / 0.40)",
+        "glow-sm": "0 0 16px oklch(0.58 0.23 270 / 0.28)",
+        "glow-cyan": "0 0 20px oklch(0.65 0.18 195 / 0.35)",
+        panel: "4px 0 24px oklch(0 0 0 / 0.45)",
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease forwards",
         "slide-up": "slideUp 0.5s ease forwards",
-        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "pulse-glow": "pulseGlow 2.5s ease-in-out infinite",
+        "float": "float 6s ease-in-out infinite",
+        "float-slow": "float 9s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -76,8 +79,12 @@ export default {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 20px oklch(0.58 0.22 305 / 0.3)" },
-          "50%": { boxShadow: "0 0 40px oklch(0.58 0.22 305 / 0.6)" },
+          "0%, 100%": { boxShadow: "0 0 20px oklch(0.55 0.23 270 / 0.30)" },
+          "50%": { boxShadow: "0 0 50px oklch(0.60 0.25 270 / 0.60)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-14px)" },
         },
       },
     },

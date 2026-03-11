@@ -296,21 +296,66 @@ export default function LandingPage({
         id="hero"
         className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16"
       >
-        {/* Background */}
+        {/* Background mesh */}
+        <div className="absolute inset-0 hero-mesh" />
+        {/* Hero image at low opacity */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
               "url('/assets/generated/meena-hero-bg.dim_1200x600.jpg')",
-            opacity: 0.18,
+            opacity: 0.1,
+            mixBlendMode: "luminosity",
           }}
         />
-        {/* Gradient overlay */}
+        {/* Bottom fade */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-x-0 bottom-0 h-40"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% 40%, oklch(0.35 0.12 305 / 0.25) 0%, transparent 70%), radial-gradient(ellipse at bottom, oklch(0.07 0.008 280) 60%, transparent 100%)",
+              "linear-gradient(to bottom, transparent, oklch(0.07 0.008 280))",
+          }}
+        />
+        {/* Animated orbs */}
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full pointer-events-none"
+          style={{
+            background: "oklch(0.52 0.22 270 / 0.12)",
+            filter: "blur(60px)",
+          }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
+          transition={{
+            duration: 7,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full pointer-events-none"
+          style={{
+            background: "oklch(0.50 0.24 305 / 0.10)",
+            filter: "blur(50px)",
+          }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{
+            duration: 9,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+        />
+        <motion.div
+          className="absolute top-1/3 right-1/3 w-48 h-48 rounded-full pointer-events-none"
+          style={{
+            background: "oklch(0.55 0.20 195 / 0.08)",
+            filter: "blur(40px)",
+          }}
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.9, 0.5] }}
+          transition={{
+            duration: 11,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+            delay: 4,
           }}
         />
 
@@ -337,7 +382,7 @@ export default function LandingPage({
 
             <motion.h1
               variants={fadeUp}
-              className="font-display text-5xl sm:text-7xl font-extrabold leading-[1.05] tracking-tight"
+              className="font-display text-5xl sm:text-7xl lg:text-8xl font-extrabold leading-[1.02] tracking-tight"
             >
               Edit Videos <br className="hidden sm:block" />
               <span className="text-gradient">Like a Pro</span>
@@ -441,18 +486,22 @@ export default function LandingPage({
             {FEATURES.map((f) => (
               <motion.div key={f.title} variants={fadeUp}>
                 <Card
-                  className="glass h-full transition-all duration-300 hover:scale-[1.02] group"
+                  className="glass h-full transition-all duration-300 hover:scale-[1.02] hover:shadow-glow group"
                   style={{ borderColor: "oklch(0.22 0.025 280 / 0.6)" }}
                 >
                   <CardContent className="p-6">
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
                       style={{
-                        background: `${f.color}22`,
-                        border: `1px solid ${f.color}44`,
+                        background: `${f.color}1A`,
+                        border: `1px solid ${f.color}40`,
+                        boxShadow: `0 0 20px ${f.color}20`,
                       }}
                     >
-                      <f.icon className="w-5 h-5" style={{ color: f.color }} />
+                      <f.icon
+                        className="w-5.5 h-5.5"
+                        style={{ color: f.color }}
+                      />
                     </div>
                     <h3 className="font-display font-semibold text-lg mb-2">
                       {f.title}

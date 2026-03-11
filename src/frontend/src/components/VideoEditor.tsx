@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   ArrowLeftRight,
@@ -28,6 +27,7 @@ import {
   Mic,
   Music,
   Palette,
+  Paperclip,
   Pause,
   Play,
   Plus,
@@ -3473,6 +3473,8 @@ function AIChatbox() {
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -3511,13 +3513,65 @@ function AIChatbox() {
         FALLBACK_RESPONSES[
           Math.floor(Math.random() * FALLBACK_RESPONSES.length)
         ];
-      for (const r of AI_RESPONSES) {
-        if (r.keywords.some((k) => lower.includes(k))) {
+      if (lower.includes("[attached:")) {
+        const match = lower.match(/\[attached: (.+?)\]/);
+        const fname = match ? match[1] : "file";
+        const ext = fname.split(".").pop()?.toLowerCase() ?? "";
+        const isImage = ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(
+          ext,
+        );
+        const isVideo = ["mp4", "mov", "avi", "webm"].includes(ext);
+        const isAudio = ["mp3", "wav", "ogg", "m4a"].includes(ext);
+        const isDoc = [
+          "pdf",
+          "doc",
+          "docx",
+          "xls",
+          "xlsx",
+          "ppt",
+          "pptx",
+          "txt",
+          "csv",
+        ].includes(ext);
+        if (isImage) {
           reply = {
-            text: r.response,
-            suggestions: r.suggestions ?? DEFAULT_SUGGESTIONS,
+            text: `Image **${fname}** received! You can use the **Uploads tab** to add images to your video canvas. Go to sidebar → Upload → drag or click to add.`,
+            suggestions: ["Add to canvas", "Apply filter", "Add text overlay"],
           };
-          break;
+        } else if (isVideo) {
+          reply = {
+            text: `Video **${fname}** received! Use the **Upload area** (top of editor) to load this video into the timeline for editing.`,
+            suggestions: ["Trim video", "Add music", "Apply filter"],
+          };
+        } else if (isAudio) {
+          reply = {
+            text: `Audio **${fname}** received! Go to **Music tab** → Upload your own audio to add it as a background track to your video.`,
+            suggestions: [
+              "Set as background music",
+              "Adjust volume",
+              "Add voiceover",
+            ],
+          };
+        } else if (isDoc) {
+          reply = {
+            text: `Document **${fname}** received! You can extract text from it and use the **Text Overlay** tool to add it to your video. Go to sidebar → Text tab.`,
+            suggestions: ["Add text overlay", "Convert to PDF", "Export video"],
+          };
+        } else {
+          reply = {
+            text: `File **${fname}** received! Use the **Uploads tab** or **Convert tab** in the sidebar to work with this file in your project.`,
+            suggestions: ["Open Uploads tab", "Convert file", "Add to project"],
+          };
+        }
+      } else {
+        for (const r of AI_RESPONSES) {
+          if (r.keywords.some((k) => lower.includes(k))) {
+            reply = {
+              text: r.response,
+              suggestions: r.suggestions ?? DEFAULT_SUGGESTIONS,
+            };
+            break;
+          }
         }
       }
       setTyping(false);
@@ -3533,8 +3587,23 @@ function AIChatbox() {
     }, 900);
   };
 
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setAttachedFile(file);
+    e.target.value = "";
+  };
+
   const send = () => {
-    if (input.trim()) processInput(input.trim());
+    if (attachedFile) {
+      const label = attachedFile.name;
+      const msgText = input.trim()
+        ? `${input.trim()} [Attached: ${label}]`
+        : `[Attached: ${label}]`;
+      processInput(msgText);
+      setAttachedFile(null);
+    } else if (input.trim()) {
+      processInput(input.trim());
+    }
   };
 
   const renderText = (text: string) =>
@@ -3562,29 +3631,50 @@ function AIChatbox() {
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-3 py-2 flex-shrink-0"
+            className="flex items-center justify-between px-3 py-2.5 flex-shrink-0"
             style={{
               background:
-                "linear-gradient(135deg, oklch(0.30 0.15 305), oklch(0.25 0.12 280))",
+                "linear-gradient(135deg, oklch(0.38 0.20 270), oklch(0.32 0.22 295))",
+              boxShadow: "0 2px 12px oklch(0.40 0.22 270 / 0.4)",
             }}
           >
             <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-white" />
-              <span className="text-xs font-semibold text-white">
-                Meena AI Assistant
-              </span>
-              <span
-                className="text-[9px] px-1.5 py-0.5 rounded-full text-white/80"
-                style={{ background: "oklch(0.40 0.18 305 / 0.5)" }}
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: "oklch(0.55 0.25 270 / 0.5)",
+                  border: "1px solid oklch(0.70 0.20 270 / 0.4)",
+                }}
               >
-                Smart
+                <Bot className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-white leading-none">
+                  Meena AI
+                </p>
+                <p className="text-[9px] text-white/60 leading-none mt-0.5">
+                  Smart Assistant
+                </p>
+              </div>
+              <span
+                className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{
+                  background: "oklch(0.60 0.22 150 / 0.4)",
+                  color: "oklch(0.80 0.18 150)",
+                }}
+              >
+                ● Online
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={clearChat}
-                className="text-white/60 hover:text-white transition-colors text-[9px]"
+                className="text-[9px] px-2 py-0.5 rounded-full transition-colors"
+                style={{
+                  background: "oklch(0.25 0.05 270 / 0.5)",
+                  color: "oklch(0.75 0.05 270)",
+                }}
               >
                 Clear
               </button>
@@ -3592,9 +3682,13 @@ function AIChatbox() {
                 type="button"
                 onClick={() => setOpen(false)}
                 data-ocid="chat.close_button"
-                className="text-white/70 hover:text-white transition-colors"
+                className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+                style={{
+                  background: "oklch(0.25 0.05 270 / 0.4)",
+                  color: "oklch(0.75 0.05 270)",
+                }}
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           </div>
@@ -3607,14 +3701,20 @@ function AIChatbox() {
                 className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className="max-w-[90%] px-2.5 py-1.5 rounded-lg text-[11px] leading-relaxed"
+                  className="max-w-[90%] px-3 py-2 rounded-xl text-[11px] leading-relaxed"
                   style={
                     m.role === "user"
-                      ? { background: "oklch(0.50 0.20 305)", color: "white" }
+                      ? {
+                          background:
+                            "linear-gradient(135deg, oklch(0.52 0.22 270), oklch(0.48 0.22 295))",
+                          color: "white",
+                          boxShadow: "0 2px 8px oklch(0.50 0.22 270 / 0.3)",
+                        }
                       : {
-                          background: "oklch(0.16 0.025 280)",
-                          color: "oklch(0.80 0.05 280)",
-                          border: "1px solid oklch(0.22 0.03 280)",
+                          background: "oklch(0.13 0.018 280)",
+                          color: "oklch(0.82 0.04 280)",
+                          border: "1px solid oklch(0.20 0.025 280)",
+                          boxShadow: "inset 0 1px 0 oklch(0.22 0.03 280 / 0.5)",
                         }
                   }
                 >
@@ -3675,7 +3775,51 @@ function AIChatbox() {
             className="flex-shrink-0 p-2 border-t"
             style={{ borderColor: "oklch(0.20 0.03 280)" }}
           >
+            {attachedFile && (
+              <div
+                className="flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded-lg text-[10px]"
+                style={{
+                  background: "oklch(0.18 0.04 305 / 0.5)",
+                  border: "1px solid oklch(0.35 0.10 305 / 0.4)",
+                }}
+              >
+                <Paperclip className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                <span className="text-purple-300 truncate flex-1">
+                  {attachedFile.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAttachedFile(null)}
+                  className="text-white/50 hover:text-white ml-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => chatFileInputRef.current?.click()}
+                data-ocid="chat.upload_button"
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+                title="Attach file (document, image, audio, video)"
+                style={{
+                  background: "oklch(0.18 0.03 280)",
+                  border: "1px solid oklch(0.28 0.06 280)",
+                }}
+              >
+                <Paperclip
+                  className="w-3.5 h-3.5"
+                  style={{ color: "oklch(0.65 0.15 305)" }}
+                />
+              </button>
+              <input
+                ref={chatFileInputRef}
+                type="file"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+                className="hidden"
+                onChange={handleFileAttach}
+              />
               <input
                 type="text"
                 value={input}
@@ -3727,6 +3871,25 @@ function AIChatbox() {
 }
 
 // ─── Main VideoEditor ─────────────────────────────────────────────────────────
+
+// ─── Sidebar Items ────────────────────────────────────────────────────────────
+const SIDEBAR_ITEMS = [
+  { id: "text", label: "Text", icon: Type },
+  { id: "music", label: "Music", icon: Music },
+  { id: "audio", label: "Audio", icon: Volume2 },
+  { id: "filters", label: "Filters", icon: Film },
+  { id: "trim", label: "Trim", icon: Scissors },
+  { id: "brand", label: "Brand", icon: Palette },
+  { id: "templates", label: "Templ", icon: LayoutTemplate },
+  { id: "elements", label: "Elem", icon: Shapes },
+  { id: "background", label: "BG", icon: Image },
+  { id: "apps", label: "Apps", icon: Layers },
+  { id: "magic", label: "Magic", icon: Sparkles },
+  { id: "uploads", label: "Upload", icon: Upload },
+  { id: "chroma", label: "Chroma", icon: Wand2 },
+  { id: "convert", label: "Convert", icon: ArrowLeftRight },
+];
+
 export default function VideoEditor({
   onBack,
   isLoggedIn = false,
@@ -3761,6 +3924,7 @@ export default function VideoEditor({
   // UI state
   const [exportOpen, setExportOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activePanel, setActivePanel] = useState("text");
 
   const handleUpload = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
@@ -3921,140 +4085,87 @@ export default function VideoEditor({
 
       {/* Main editor area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel — Tools */}
-        <aside
-          className="w-64 flex-shrink-0 flex flex-col overflow-hidden border-r"
-          style={{
-            background: "oklch(0.09 0.01 280)",
-            borderColor: "oklch(0.18 0.02 280)",
-          }}
-        >
-          <Tabs
-            defaultValue="text"
-            className="flex-1 flex flex-col overflow-hidden"
+        {/* Left Panel — Tools (Canva-style vertical icon rail + panel content) */}
+        <aside className="flex flex-shrink-0">
+          {/* Icon Rail */}
+          <div
+            className="w-14 flex-shrink-0 flex flex-col py-2 gap-0.5 border-r overflow-y-auto"
+            style={{
+              background: "oklch(0.08 0.009 280)",
+              borderColor: "oklch(0.16 0.018 280)",
+              scrollbarWidth: "none",
+            }}
           >
-            <TabsList
-              className="grid grid-cols-11 m-2 h-8 flex-shrink-0 rounded-lg"
-              style={{ background: "oklch(0.12 0.015 280)" }}
-            >
-              <TabsTrigger
-                value="text"
-                className="text-xs rounded-md"
-                data-ocid="editor.text.tab"
+            {SIDEBAR_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActivePanel(item.id)}
+                data-ocid={`editor.${item.id}.tab`}
+                title={item.label}
+                className="relative mx-1.5 flex flex-col items-center gap-0.5 py-2 px-0.5 rounded-xl transition-all duration-200 cursor-pointer"
+                style={{
+                  background:
+                    activePanel === item.id
+                      ? "oklch(0.58 0.22 305 / 0.18)"
+                      : "transparent",
+                  color:
+                    activePanel === item.id
+                      ? "oklch(0.82 0.20 305)"
+                      : "oklch(0.48 0.025 280)",
+                  boxShadow:
+                    activePanel === item.id
+                      ? "inset 0 0 0 1px oklch(0.58 0.22 305 / 0.35), 0 0 12px oklch(0.58 0.22 305 / 0.15)"
+                      : "none",
+                }}
               >
-                <Type className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="music"
-                className="text-xs rounded-md"
-                data-ocid="editor.music.tab"
-              >
-                <Music className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="audio"
-                className="text-xs rounded-md"
-                data-ocid="editor.audio.tab"
-              >
-                <Volume2 className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="filters"
-                className="text-xs rounded-md"
-                data-ocid="editor.filters.tab"
-              >
-                <Film className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="trim"
-                className="text-xs rounded-md"
-                data-ocid="editor.trim.tab"
-              >
-                <Scissors className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="background"
-                className="text-xs rounded-md"
-                data-ocid="editor.background.tab"
-              >
-                <Image className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="apps"
-                className="text-xs rounded-md"
-                data-ocid="editor.apps.tab"
-              >
-                <Layers className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="magic"
-                className="text-xs rounded-md"
-                data-ocid="editor.magic.tab"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="uploads"
-                className="text-xs rounded-md"
-                data-ocid="editor.uploads.tab"
-              >
-                <Upload className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="chroma"
-                className="text-xs rounded-md"
-                data-ocid="editor.chroma.tab"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="convert"
-                className="text-xs rounded-md"
-                data-ocid="editor.convert.tab"
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5" />
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Tab labels */}
-            <div className="flex px-2 mb-1">
-              {[
-                { val: "text", label: "Text" },
-                { val: "music", label: "Music" },
-                { val: "audio", label: "Audio" },
-                { val: "filters", label: "Filters" },
-                { val: "trim", label: "Trim" },
-                { val: "brand", label: "Brand" },
-                { val: "templates", label: "Templates" },
-                { val: "elements", label: "Elements" },
-                { val: "background", label: "BG" },
-                { val: "apps", label: "Apps" },
-                { val: "magic", label: "Magic" },
-                { val: "uploads", label: "Upload" },
-                { val: "chroma", label: "Chroma" },
-              ].map((t) => (
-                <span
-                  key={t.val}
-                  className="flex-1 text-center text-[9px] text-muted-foreground"
-                >
-                  {t.label}
+                <item.icon className="w-4 h-4" />
+                <span className="text-[8.5px] font-medium leading-none">
+                  {item.label}
                 </span>
-              ))}
+              </button>
+            ))}
+          </div>
+
+          {/* Panel Content */}
+          <div
+            className="w-52 flex-shrink-0 overflow-y-auto flex flex-col"
+            style={{
+              background: "oklch(0.09 0.01 280)",
+              borderRight: "1px solid oklch(0.16 0.018 280)",
+            }}
+          >
+            {/* Panel Header */}
+            <div
+              className="px-3 py-2.5 flex-shrink-0 border-b"
+              style={{
+                background:
+                  "linear-gradient(180deg, oklch(0.11 0.015 280), oklch(0.09 0.01 280))",
+                borderColor: "oklch(0.18 0.02 280)",
+              }}
+            >
+              <p
+                className="text-xs font-semibold capitalize"
+                style={{ color: "oklch(0.75 0.08 280)" }}
+              >
+                {SIDEBAR_ITEMS.find((i) => i.id === activePanel)?.label ??
+                  "Tools"}
+              </p>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <TabsContent value="text" className="m-0 mt-0">
+            <div className="flex-1">
+              {activePanel === "text" && (
                 <TextPanel texts={texts} setTexts={setTexts} />
-              </TabsContent>
-              <TabsContent value="music" className="m-0 mt-0">
+              )}
+              {activePanel === "music" && (
                 <MusicPanel
                   activeTrack={activeTrack}
                   setActiveTrack={setActiveTrack}
                   musicVolume={musicVolume}
                   setMusicVolume={setMusicVolume}
                 />
-              </TabsContent>
-              <TabsContent value="audio" className="m-0 mt-0">
+              )}
+              {activePanel === "audio" && (
                 <AudioPanel
                   origVolume={origVolume}
                   setOrigVolume={setOrigVolume}
@@ -4067,16 +4178,16 @@ export default function VideoEditor({
                   bgNoise={bgNoise}
                   setBgNoise={setBgNoise}
                 />
-              </TabsContent>
-              <TabsContent value="filters" className="m-0 mt-0">
+              )}
+              {activePanel === "filters" && (
                 <FiltersPanel
                   activeFilter={activeFilter}
                   setActiveFilter={setActiveFilter}
                   intensity={filterIntensity}
                   setIntensity={setFilterIntensity}
                 />
-              </TabsContent>
-              <TabsContent value="trim" className="m-0 mt-0">
+              )}
+              {activePanel === "trim" && (
                 <TrimPanel
                   duration={duration}
                   startTime={startTime}
@@ -4084,41 +4195,23 @@ export default function VideoEditor({
                   setStartTime={setStartTime}
                   setEndTime={setEndTime}
                 />
-              </TabsContent>
-              <TabsContent value="brand" className="m-0 mt-0">
-                <BrandKitPanel />
-              </TabsContent>
-              <TabsContent value="templates" className="m-0 mt-0">
-                <TemplatesPanel />
-              </TabsContent>
-              <TabsContent value="elements" className="m-0 mt-0">
-                <ElementsPanel />
-              </TabsContent>
-              <TabsContent value="background" className="m-0 mt-0">
-                <BackgroundPanel />
-              </TabsContent>
-              <TabsContent value="apps" className="m-0 mt-0">
-                <AppsPanel />
-              </TabsContent>
-              <TabsContent value="magic" className="m-0 mt-0">
-                <MagicMediaPanel />
-              </TabsContent>
-              <TabsContent value="uploads" className="m-0 mt-0">
-                <UploadsPanel />
-              </TabsContent>
-              <TabsContent value="chroma" className="m-0 mt-0">
-                <ChromaKeyPanel />
-              </TabsContent>
-              <TabsContent value="convert" className="m-0 mt-0">
-                <FileConverterPanel />
-              </TabsContent>
+              )}
+              {activePanel === "brand" && <BrandKitPanel />}
+              {activePanel === "templates" && <TemplatesPanel />}
+              {activePanel === "elements" && <ElementsPanel />}
+              {activePanel === "background" && <BackgroundPanel />}
+              {activePanel === "apps" && <AppsPanel />}
+              {activePanel === "magic" && <MagicMediaPanel />}
+              {activePanel === "uploads" && <UploadsPanel />}
+              {activePanel === "chroma" && <ChromaKeyPanel />}
+              {activePanel === "convert" && <FileConverterPanel />}
             </div>
-          </Tabs>
+          </div>
         </aside>
 
         {/* Center — Video Preview */}
         <main
-          className="flex-1 flex flex-col overflow-hidden relative"
+          className="flex-1 flex flex-col overflow-hidden relative canvas-bg"
           style={{ background: "oklch(0.07 0.008 280)" }}
         >
           <AIChatbox />

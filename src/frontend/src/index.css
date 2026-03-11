@@ -7,9 +7,9 @@
 }
 
 @font-face {
-  font-family: "Sora";
-  src: url("/assets/fonts/Sora.woff2") format("woff2");
-  font-weight: 100 800;
+  font-family: "Outfit";
+  src: url("/assets/fonts/Outfit.woff2") format("woff2");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -37,8 +37,8 @@
     --popover: 0.1 0.012 280;
     --popover-foreground: 0.94 0.01 280;
 
-    /* primary: magenta-violet */
-    --primary: 0.58 0.22 305;
+    /* primary: vibrant violet */
+    --primary: 0.6 0.23 270;
     --primary-foreground: 0.98 0 0;
 
     /* secondary */
@@ -47,10 +47,10 @@
 
     /* muted */
     --muted: 0.13 0.015 280;
-    --muted-foreground: 0.52 0.025 280;
+    --muted-foreground: 0.5 0.025 280;
 
-    /* accent: electric violet */
-    --accent: 0.52 0.25 290;
+    /* accent: electric violet-blue */
+    --accent: 0.55 0.25 285;
     --accent-foreground: 0.98 0 0;
 
     /* destructive */
@@ -58,12 +58,12 @@
     --destructive-foreground: 0.98 0 0;
 
     /* borders/inputs */
-    --border: 0.2 0.02 280;
+    --border: 0.19 0.018 280;
     --input: 0.14 0.015 280;
-    --ring: 0.58 0.22 305;
+    --ring: 0.6 0.23 270;
 
     /* chart colors */
-    --chart-1: 0.58 0.22 305;
+    --chart-1: 0.6 0.23 270;
     --chart-2: 0.62 0.18 260;
     --chart-3: 0.55 0.2 330;
     --chart-4: 0.65 0.15 200;
@@ -85,12 +85,12 @@
 }
 
 @layer utilities {
-  /* Gradient text */
+  /* ── Typography ─────────────────────────────── */
   .text-gradient {
     background: linear-gradient(
       135deg,
-      oklch(0.7 0.25 305),
-      oklch(0.65 0.22 260)
+      oklch(0.72 0.24 270),
+      oklch(0.65 0.2 305)
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -108,79 +108,140 @@
     background-clip: text;
   }
 
-  /* Primary button gradient */
+  .text-gradient-cyan {
+    background: linear-gradient(
+      135deg,
+      oklch(0.72 0.18 195),
+      oklch(0.68 0.22 240)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Buttons ─────────────────────────────────── */
   .btn-gradient {
     background: linear-gradient(
       135deg,
-      oklch(0.58 0.22 305),
-      oklch(0.52 0.25 280)
+      oklch(0.58 0.25 270),
+      oklch(0.52 0.24 295)
     );
-    transition: opacity 0.2s, transform 0.15s;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
   }
   .btn-gradient:hover {
-    opacity: 0.9;
+    opacity: 0.92;
     transform: translateY(-1px);
+    box-shadow: 0 8px 24px oklch(0.55 0.25 270 / 0.45);
   }
   .btn-gradient:active {
     transform: translateY(0);
+    box-shadow: none;
   }
 
-  /* Glow effects */
+  /* ── Glow effects ────────────────────────────── */
   .glow-primary {
-    box-shadow: 0 0 30px oklch(0.58 0.22 305 / 0.35);
+    box-shadow: 0 0 32px oklch(0.58 0.23 270 / 0.4), 0 0 8px
+      oklch(0.58 0.23 270 / 0.2);
   }
   .glow-sm {
-    box-shadow: 0 0 15px oklch(0.58 0.22 305 / 0.25);
+    box-shadow: 0 0 16px oklch(0.58 0.23 270 / 0.28);
+  }
+  .glow-cyan {
+    box-shadow: 0 0 20px oklch(0.65 0.18 195 / 0.35);
   }
 
-  /* Glass card */
+  /* ── Glass surfaces ──────────────────────────── */
   .glass {
-    background: oklch(0.11 0.015 280 / 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid oklch(0.25 0.03 280 / 0.5);
+    background: oklch(0.11 0.015 280 / 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid oklch(0.28 0.04 280 / 0.45);
+  }
+  .glass:hover {
+    background: oklch(0.13 0.018 280 / 0.85);
+    border-color: oklch(0.32 0.06 270 / 0.5);
   }
 
   .glass-dark {
-    background: oklch(0.08 0.01 280 / 0.9);
-    backdrop-filter: blur(16px);
-    border: 1px solid oklch(0.2 0.025 280 / 0.6);
+    background: oklch(0.08 0.01 280 / 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid oklch(0.22 0.025 280 / 0.55);
   }
 
-  /* Panel surface */
+  /* ── Panel surface ───────────────────────────── */
   .panel {
-    background: oklch(0.1 0.012 280);
-    border-right: 1px solid oklch(0.18 0.02 280);
+    background: oklch(0.09 0.01 280);
+    border-right: 1px solid oklch(0.17 0.018 280);
   }
 
-  /* Noise overlay */
+  /* ── Canvas editor background (dot grid) ─────── */
+  .canvas-bg {
+    background-image: radial-gradient(
+      circle,
+      oklch(0.22 0.02 280 / 0.5) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
+    background-color: oklch(0.065 0.008 280);
+  }
+
+  /* ── Noise overlay ───────────────────────────── */
   .noise-overlay::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 0;
   }
 
-  /* Timeline */
+  /* ── Timeline ────────────────────────────────── */
   .timeline-track {
-    background: oklch(0.13 0.015 280);
-    border: 1px solid oklch(0.2 0.02 280);
+    background: oklch(0.12 0.015 280);
+    border: 1px solid oklch(0.19 0.02 280);
   }
 
-  /* Scrollbar styling */
+  /* ── Hero gradient mesh ──────────────────────── */
+  .hero-mesh {
+    background: radial-gradient(
+        ellipse 70% 55% at 30% 35%,
+        oklch(0.35 0.18 270 / 0.22) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse 55% 45% at 75% 65%,
+        oklch(0.3 0.2 305 / 0.18) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 80% 60% at 50% 50%,
+        oklch(0.2 0.08 250 / 0.15) 0%,
+        transparent 80%
+      );
+  }
+
+  /* ── Scrollbar ───────────────────────────────── */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: oklch(0.08 0.01 280);
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.22 0.025 280);
+    background: oklch(0.2 0.022 280);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.3 0.04 305);
+    background: oklch(0.32 0.06 270);
+  }
+
+  /* ── Sidebar icon rail scrollbar hide ────────── */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
